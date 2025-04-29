@@ -1,0 +1,29 @@
+
+Validate.js
+
+
+// get data from params 
+
+params = {name , email , role_id , name , phone_number}
+
+
+
+// check role_id
+
+role_id = 1  Job seeker
+role_id = 2  Company 
+
+// Check step 
+
+Job Seeker step 1 : Email & phone Verification
+Job Seeker step 2 : Preferred role
+Job Seeker step 3 : Preferred location
+Job Seeker step > 3 : Home
+
+
+Company step 1 : Basic Detail
+Company step 2 : Company Detail
+Company step 3 : Kyc Verify
+Company step > 3 : Home
+
+
