@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import {
   View,
@@ -10,79 +10,62 @@ import {
   StatusBar,
   StyleSheet,
   Animated,
-  Platform,
-  Vibration,
-} from "react-native"
-import { useState, useRef, useEffect } from "react"
-import { Colors } from "../../theme/color"
-import { useNavigation } from "@react-navigation/native"
-import IntroItem from "./IntroItem"
-import Slides from "./Slides"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-// Import the haptic feedback library
-import ReactNativeHapticFeedback from "react-native-haptic-feedback"
+} from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { Colors } from '../../theme/color';
+import { useNavigation } from '@react-navigation/native';
+import IntroItem from './IntroItem';
+import Slides from './Slides';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Options for haptic feedback
-const hapticOptions = {
-  enableVibrateFallback: true,
-  ignoreAndroidSystemSettings: false,
-}
 
-const { width } = Dimensions.get("screen")
+
+
+const { width } = Dimensions.get('screen');
 
 export default function Introduction() {
-  const navigation = useNavigation()
-  const ref = useRef(null)
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
+  const navigation = useNavigation();
+  const ref = useRef(null);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Create animated values for circle sizes and z-indices
-  const largeCircleSize = useRef(new Animated.Value(700)).current
-  const smallCircleSize = useRef(new Animated.Value(600)).current
-  const largeCircleZIndex = useRef(new Animated.Value(1)).current
-  const smallCircleZIndex = useRef(new Animated.Value(2)).current
+  const largeCircleSize = useRef(new Animated.Value(700)).current;
+  const smallCircleSize = useRef(new Animated.Value(600)).current;
+  const largeCircleZIndex = useRef(new Animated.Value(1)).current;
+  const smallCircleZIndex = useRef(new Animated.Value(2)).current;
 
-
-  console.log('Introduction page')
+  console.log('Introduction page');
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const storedUserId = await AsyncStorage.getItem("userId")
+        const storedUserId = await AsyncStorage.getItem('userId');
         if (storedUserId) {
-      
-          navigation.navigate("Validate")
+          navigation.navigate('Validate');
         }
       } catch (error) {
-        console.error("❌ Error fetching user ID:", error)
+        console.error('❌ Error fetching user ID:', error);
       }
-    }
-    checkUser()
-  }, [navigation])
+    };
+    checkUser();
+  }, [navigation]);
 
-  // Generate haptic feedback based on platform
-  const triggerHapticFeedback = (type = "impactMedium") => {
-    if (Platform.OS === "ios") {
-      // Use advanced haptics on iOS
-      ReactNativeHapticFeedback.trigger(type, hapticOptions)
-    } else {
-      Vibration.vibrate(40)
-    }
-  }
+
 
   // Animate circle sizes and z-indices based on slide index
   useEffect(() => {
-    animateCircles()
-  }, [currentSlideIndex])
+    animateCircles();
+  }, [currentSlideIndex]);
 
   const animateCircles = () => {
-    setIsAnimating(true)
+    setIsAnimating(true);
 
     // Different animations for each slide
     const config = {
       duration: 800,
       useNativeDriver: false,
-    }
+    };
 
     // Reset z-indices first to avoid visual glitches
     Animated.parallel([
@@ -96,7 +79,7 @@ export default function Introduction() {
         duration: 0,
         useNativeDriver: false,
       }),
-    ]).start()
+    ]).start();
 
     // Then animate the sizes
     Animated.parallel([
@@ -109,12 +92,11 @@ export default function Introduction() {
         ...config,
       }),
     ]).start(() => {
-      setIsAnimating(false)
-    })
+      setIsAnimating(false);
+    });
 
-    // Provide haptic feedback when animation starts
-    triggerHapticFeedback()
-  }
+
+  };
 
   const Footer = () => {
     return (
@@ -126,49 +108,51 @@ export default function Introduction() {
               style={[styles.indicator, currentSlideIndex === index && styles.activeIndicator]}
               onPress={() => {
                 if (!isAnimating) {
-                  ref.current?.scrollToOffset({ offset: index * width })
-                  setCurrentSlideIndex(index)
+                  ref.current?.scrollToOffset({ offset: index * width });
+                  setCurrentSlideIndex(index);
                 }
               }}
             />
           ))}
         </View>
         <TouchableOpacity onPress={goNextSlide} style={styles.nextButton} disabled={isAnimating}>
-          <Text style={styles.nextButtonText}>{currentSlideIndex === Slides.length - 1 ? "NEXT" : "NEXT"}</Text>
+          <Text style={styles.nextButtonText}>
+            {currentSlideIndex === Slides.length - 1 ? 'NEXT' : 'NEXT'}
+          </Text>
         </TouchableOpacity>
       </View>
-    )
-  }
+    );
+  };
 
   const updateCurrentSlideIndex = (e) => {
-    const contentOffsetX = e.nativeEvent.contentOffset.x
-    const currentIndex = Math.round(contentOffsetX / width)
-    setCurrentSlideIndex(currentIndex)
-  }
+    const contentOffsetX = e.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(contentOffsetX / width);
+    setCurrentSlideIndex(currentIndex);
+  };
 
   const goNextSlide = () => {
-    if (isAnimating) return
+    if (isAnimating) return;
 
-    const nextSlideIndex = currentSlideIndex + 1
+    const nextSlideIndex = currentSlideIndex + 1;
 
     // Check if we're at the last slide
     if (nextSlideIndex === Slides.length) {
-      navigation.navigate("On1")
-      return
+      navigation.navigate('On1');
+      return;
     }
 
     // Scroll to next slide
     ref.current?.scrollToOffset({
       offset: nextSlideIndex * width,
       animated: true,
-    })
+    });
 
     // Update current slide index
-    setCurrentSlideIndex(nextSlideIndex)
-  }
+    setCurrentSlideIndex(nextSlideIndex);
+  };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: "#F5FBF6" }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F5FBF6' }]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
       <FlatList
         data={Slides}
@@ -192,7 +176,7 @@ export default function Introduction() {
       />
       <Footer />
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -201,24 +185,24 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingBottom: 30,
     paddingHorizontal: 20,
     backgroundColor: Colors.bg,
   },
   indicators: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
   },
   indicator: {
     width: 12,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#D6D6D6",
+    backgroundColor: '#D6D6D6',
     marginHorizontal: 5,
   },
   activeIndicator: {
@@ -233,11 +217,11 @@ const styles = StyleSheet.create({
     width: 150,
     paddingHorizontal: 30,
     borderRadius: 10,
-    alignItems: "center",
+    alignItems: 'center',
   },
   nextButtonText: {
-    color: "white",
+    color: 'white',
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: 'bold',
   },
-})
+});

@@ -26,16 +26,19 @@ const API_ENDPOINTS = {
   EDUCATION: `${BASE_URL}/user-education`,
   PROJECTS: `${BASE_URL}/user-projects`,
   SKILLS: `${BASE_URL}/user-skills`,
-  DOCS : `${BASE_URL}/user-docs`,
-  VISIBLE : `${BASE_URL}/user-visibility`,
+  DOCS: `${BASE_URL}/user-docs`,
+  VISIBLE: `${BASE_URL}/user-visibility`,
+  
 
   //Company API
   EMPLOYER: `${BASE_URL}/employers`,
   COMPANY_DETAILS: `${BASE_URL}/company-detail`,
+  VERIFY_DOCS : `${BASE_URL}/verification-docs`,
   JOB_POSTING: `${BASE_URL}/jobs`,
   JOBS: `${BASE_URL}/jobs`,
   JOB_APPLY: `${BASE_URL}/apply_job`,
   RECOMMEND_JOBS: `${BASE_URL}/job-recommendation`,
+  SAVE_JOBS : `${BASE_URL}/saved-jobs`,
 
   // Others API
 
@@ -46,10 +49,17 @@ const API_ENDPOINTS = {
   JOB_DEPARTMENT: `${BASE_URL}/job-department`,
   JOB_CATEGORY: `${BASE_URL}/job-categories`,
   JOBS_FILTER: `${BASE_URL}/filtering`,
-
-
   FETCH_JOB_POSTING: `${BASE_URL}/emp-job-posted`,
 
+
+
+  // Delete API
+
+  DELETE_EDUCATION: `${BASE_URL}/delete_education`,
+  DELETE_PROJECT: `${BASE_URL}/delete-project`,
+  DELETE_EMPLOYMENT: `${BASE_URL}/delete_employmet_detail`,
+  DELETE_LANGUAGE:  `${BASE_URL}/delete_language`,
+  DELETE_PROJECT : `${BASE_URL}/delete_projects`,
 };
 
 export { BASE_URL, API_ENDPOINTS };

@@ -1,5 +1,5 @@
 /*
- * Developed by Aman Kumar
+ * Developed by Aman Kumar and Anirudh Bhardwaj
  * Date: 2025-01-29
  * Description: Signup Process Step 1.
  */
@@ -19,7 +19,6 @@ import {
   Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { setIntroDetail } from '../../redux/slice/introSlice';
 import axios from 'axios';
 import { AppBar } from '@react-native-material/core';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -287,18 +286,6 @@ export default function Signup() {
         // ✅ Create new user
         const userCredential = await auth().createUserWithEmailAndPassword(email, password);
         firebaseUser = userCredential.user;
-
-        // ✅ Add intro details if user is created
-        if (userCredential) {
-          dispatch(
-            setIntroDetail({
-              fullName: fullName,
-              profileHeadline: '',
-              education: '',
-              expertise: '',
-            })
-          );
-        }
       }
 
       // ✅ Firebase User Created or Linked → Store UID
@@ -494,9 +481,9 @@ export default function Signup() {
         </View>
       )} */}
       <StatusBar backgroundColor="transparent" translucent={true} barStyle={'dark-content'} />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : null}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? '' : null}>
         <View
-          style={[style.main, { backgroundColor: Colors.bg, paddingBottom: 40, marginTop: 30 }]}
+          style={[style.main, { backgroundColor: Colors.bg, paddingBottom: 40, marginTop: 10 }]}
         >
           <AppBar
             color={Colors.bg}
@@ -513,7 +500,7 @@ export default function Signup() {
               style={[
                 {
                   color: Colors.txt,
-                  marginTop: 50,
+                  marginTop: 10,
                   fontSize: 30,
                   fontWeight: 'bold',
                   textAlign: 'center',

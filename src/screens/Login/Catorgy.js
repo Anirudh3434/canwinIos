@@ -8,11 +8,17 @@ import {
   StatusBar,
   Image,
   Alert,
+  ScrollView,
+  Dimensions,
+  BackHandler,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../api/apiConfig';
+
+// Get device width and height
+const { width, height } = Dimensions.get('window');
 
 const JobSelection = () => {
   const navigation = useNavigation();
@@ -31,6 +37,17 @@ const JobSelection = () => {
   ];
 
   useEffect(() => {
+    const backAction = () => {
+      // Your custom back button logic
+      return true; // Prevent default behavior
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove(); // Clean up on unmount
+  }, []);
+
+  useEffect(() => {
     const fetchUserId = async () => {
       try {
         const userId = await AsyncStorage.getItem('userId');
@@ -43,9 +60,6 @@ const JobSelection = () => {
     };
     fetchUserId();
   }, []);
-
-  console.log('user id:', userid);
-  console.log('role id:', roleId);
 
   const handleSubmit = async () => {
     if (!prefered_job_role) {
@@ -65,25 +79,21 @@ const JobSelection = () => {
 
     try {
       const response = await axios.post(API_ENDPOINTS.CAREER, data);
-      console.log(response.data);
 
       if (response.data.status === 'success') {
         try {
-          // Get current step
           const getStepResponse = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userid}`);
 
           if (getStepResponse.data.status === 'success') {
             const currentStep = getStepResponse.data.data.steps;
             setStep(currentStep);
 
-            // Post new step
             const stepResponse = await axios.post(API_ENDPOINTS.STEP, {
               user_id: userid,
               role_id: roleId,
               steps: +currentStep + 1,
             });
 
-            console.log(stepResponse.data);
             if (stepResponse.data.status === 'success') {
               navigation.navigate('Validate');
             }
@@ -102,23 +112,15 @@ const JobSelection = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollView}>
         <Text style={styles.title}>What type of Job You're Looking For?</Text>
-        <View
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 15,
-            marginTop: 20,
-          }}
-        >
+        <View style={styles.jobList}>
           {jobs.map((job, index) => (
             <TouchableOpacity
               key={index}
               style={[
-                styles.jobButton, 
-                prefered_job_role === job.title && styles.selectedJobButton
+                styles.jobButton,
+                prefered_job_role === job.title && styles.selectedJobButton,
               ]}
               onPress={() => setPreferedJobRole(job.title)}
             >
@@ -128,46 +130,50 @@ const JobSelection = () => {
                 <Image
                   source={require('../../../assets/image/tick.png')}
                   resizeMode="contain"
-                  style={{ width: 20, height: 20 }}
+                  style={styles.tickIcon}
                 />
               )}
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity
-          onPress={handleSubmit}
-          style={styles.proceedButton}
-        >
+        <TouchableOpacity onPress={handleSubmit} style={styles.proceedButton}>
           <Text style={styles.proceedButtonText}>Proceed</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({safeArea: {
+const styles = StyleSheet.create({
+  safeArea: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  container: {
-    flex: 1,
-    padding: 20,
-    marginTop: 50,
+  scrollView: {
+    marginTop: height * 0.06,
+    paddingHorizontal: width * 0.05, // 5% horizontal padding
+    paddingBottom: height * 0.1, // 10% bottom padding
   },
   title: {
-    fontSize: 30,
+    fontSize: width * 0.075, // Responsive font size
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: height * 0.02,
     textAlign: 'center',
+  },
+  jobList: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 15,
+    marginTop: height * 0.02,
   },
   jobButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: width * 0.04,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: height * 0.015,
     width: '100%',
   },
   selectedJobButton: {
@@ -175,30 +181,30 @@ const styles = StyleSheet.create({safeArea: {
     backgroundColor: '#14B6AA0A',
   },
   jobIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 10,
+    width: width * 0.08,
+    height: width * 0.08,
+    marginRight: width * 0.04,
   },
   jobTitle: {
-    fontSize: 16,
+    fontSize: width * 0.045,
     flex: 1,
   },
-  checkmark: {
-    fontSize: 20,
-    color: '#14B6AA',
+  tickIcon: {
+    width: width * 0.05,
+    height: width * 0.05,
   },
   proceedButton: {
     backgroundColor: '#14B6AA',
-    padding: 15,
+    padding: width * 0.04,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: height * 0.04,
   },
   proceedButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: width * 0.05,
     fontWeight: 'bold',
   },
 });
 
-export default JobSelection;  
+export default JobSelection;

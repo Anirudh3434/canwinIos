@@ -12,8 +12,9 @@ import {
   TextInput,
   Alert,
   Platform,
+  BackHandler,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Colors } from '../../theme/color';
 import style from '../../theme/style';
 import { useNavigation } from '@react-navigation/native';
@@ -57,6 +58,19 @@ export default function Search() {
       location: searchItem.location,
     });
   };
+
+  const backAction = () => {
+    if (navigation.isFocused()) {
+      navigation.navigate('MyTabs');
+      return true;
+    }
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
@@ -110,7 +124,7 @@ export default function Search() {
             <Text style={styles.sectionTitle}>Your most recent searches</Text>
 
             {searchHistory.length > 0 ? (
-              <ScrollView style={styles.recentSearchList}>
+              <ScrollView horizontal={true} style={styles.recentSearchList}>
                 {searchHistory
                   .slice()
                   .reverse()
@@ -122,7 +136,7 @@ export default function Search() {
                     >
                       <Icon name="search" size={15} color={Colors.disable2} />
                       <Text style={styles.recentSearchText}>
-                        {item.search}, {item.location}
+                        {item.search && item.search + ' ,'} {item.location ? item.location : ' All'}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -135,9 +149,9 @@ export default function Search() {
             )}
           </View>
 
-          <View style={styles.companyContainer} >
+          {/* <View style={styles.companyContainer}>
             <Text style={styles.sectionTitle}>Top companies</Text>
-            <ScrollView  horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {[...Array(3)].map((_, index) => (
                 <View key={index} style={styles.companyCard}>
                   <Image
@@ -156,7 +170,7 @@ export default function Search() {
                 </View>
               ))}
             </ScrollView>
-          </View>
+          </View> */}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -226,7 +240,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: width < 375 ? 16 : 18,
     fontWeight: '700',
-    marginBottom: 10
+    marginBottom: 10,
   },
   recentSearchList: {
     maxHeight: 150,
@@ -240,6 +254,7 @@ const styles = StyleSheet.create({
     borderColor: '#DDDDDD',
     borderRadius: 10,
     marginTop: 10,
+    marginLeft: 10,
   },
   recentSearchText: {
     marginLeft: 10,

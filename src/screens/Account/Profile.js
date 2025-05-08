@@ -1,4 +1,3 @@
-
 import {
   View,
   Text,
@@ -30,8 +29,7 @@ import { toggleSidebar } from '../../redux/slice/sideBarSlice';
 import axios from 'axios';
 import RNFS from 'react-native-fs';
 import { API_ENDPOINTS } from '../../api/apiConfig';
-import Pdf from 'react-native-pdf';
-import Video from 'react-native-video';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export default function Profile() {
   const navigation = useNavigation();
@@ -46,176 +44,179 @@ export default function Profile() {
   const [data, setData] = useState();
   const [VideoPopMenu, setVideoPopMenu] = useState(false);
   const [VideoProfile, setVideoProfile] = useState(null);
-45
+  const [JobSearchStatusMenu, setJobSearchStatusMenu] = useState(false);
+  
+  const [DoneQulaified, setDoneQulified] = useState([]);
 
   const dispatch = useDispatch();
 
   const { height, width } = Dimensions.get('window');
 
-const pickDocument = async () => {
-  try {
-    const res = await DocumentPicker.pick({
-      type: [
-        DocumentPicker.types.pdf,
-        DocumentPicker.types.doc,
-        DocumentPicker.types.docx
-      ],
+  const pickDocument = async () => {
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.pdf, DocumentPicker.types.doc, DocumentPicker.types.docx],
+      });
+
+      const file = res[0];
+      const filePath = file.uri.replace('file://', '');
+      const base64Data = await RNFS.readFile(filePath, 'base64');
+
+      const blob = {
+        name: file.name,
+        type: file.type,
+        data: base64Data,
+      };
+
+      setResume(blob);
+      uploadDocument(blob, 'R');
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        console.log('User cancelled document picker');
+      } else {
+        console.error('Error picking document:', err);
+      }
+    }
+  };
+
+  const uploadVideo = async () => {
+    const options = {
+      mediaType: 'video',
+      videoQuality: 'high',
+    };
+
+    launchImageLibrary(options, async (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled video picker');
+        return;
+      }
+
+      if (response.errorCode) {
+        console.log('Picker error:', response.errorMessage);
+        return;
+      }
+
+      const video = response.assets[0];
+      const filePath = video.uri || video.originalPath;
+
+      try {
+        const base64Data = await RNFS.readFile(filePath, 'base64');
+        const blob = {
+          name: video.fileName || 'video.mp4',
+          type: video.type || 'video/mp4',
+          data: base64Data,
+        };
+
+        setVideoProfile(blob);
+        uploadDocument(blob, 'VP');
+        setVideoPopMenu(false);
+      } catch (err) {
+        console.error('Error reading video file:', err);
+      }
     });
+  };
 
-
-
-
-
-    const file = res[0];
-    const filePath = file.uri.replace('file://', '');
-    const base64Data = await RNFS.readFile(filePath, 'base64');
-
-    const blob = {
-      name: file.name,
-      type: file.type,
-      data: base64Data,
+  const recordVideo = async () => {
+    const options = {
+      mediaType: 'video',
+      videoQuality: 'high',
+      durationLimit: 120,
     };
 
-    setResume(blob);
-    uploadDocument(blob, 'R');
-  } catch (err) {
-    if (DocumentPicker.isCancel(err)) {
-      console.log('User cancelled document picker');
-    } else {
-      console.error('Error picking document:', err);
-    }
-  }
-};
+    launchCamera(options, async (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled video recording');
+        return;
+      }
 
+      if (response.errorCode) {
+        console.log('Camera error:', response.errorMessage);
+        return;
+      }
 
-const uploadVideo = async () => {
-  const options = {
-    mediaType: 'video',
-    videoQuality: 'high',
+      const video = response.assets?.[0];
+      if (!video) {
+        console.log('No video captured.');
+        return;
+      }
+
+      const filePath = video.uri || video.originalPath;
+
+      try {
+        const base64Data = await RNFS.readFile(filePath.replace('file://', ''), 'base64');
+
+        const blob = {
+          name: video.fileName || 'video.mp4',
+          uri: filePath,
+          type: video.type || 'video/mp4',
+          data: base64Data,
+        };
+
+        setVideoProfile(blob); // Save it in state if needed
+        console.log('Video blob:', blob);
+        uploadDocument(blob, 'VP'); // Upload it now
+        console.log('Video uploaded');
+        setVideoPopMenu(false);
+      } catch (err) {
+        console.error('Error reading recorded video:', err);
+      }
+    });
   };
 
-  launchImageLibrary(options, async (response) => {
-    if (response.didCancel) {
-      console.log('User cancelled video picker');
-      return;
-    }
 
-    if (response.errorCode) {
-      console.log('Picker error:', response.errorMessage);
-      return;
-    }
+  
+  // console.log('Recorded video:', VideoProfile);
 
-    const video = response.assets[0];
-    const filePath = video.uri || video.originalPath;
+  const pickImage = () => {
+    ImagePicker.openPicker({
+      width: 300,
+      height: 300,
+      cropping: true,
+      cropperCircleOverlay: true,
+    })
+      .then(async (image) => {
+        const base64Data = await RNFS.readFile(image.path, 'base64');
+        const blob = {
+          name: image.filename || 'profile.jpg',
+          type: image.mime,
+          uri: image.path,
+          data: base64Data,
+        };
 
-    try {
-      const base64Data = await RNFS.readFile(filePath, 'base64');
-      const blob = {
-        name: video.fileName || 'video.mp4',
-        type: video.type || 'video/mp4',
-        data: base64Data,
-      };
-
-      setVideoProfile(blob);
-      uploadDocument(blob, 'VP');
-      setVideoPopMenu(false)
-    } catch (err) {
-      console.error('Error reading video file:', err);
-    }
-  });
-};
-
-const recordVideo = async () => {
-  const options = {
-    mediaType: 'video',
-    videoQuality: 'high',
-    durationLimit: 120, 
+        setProfileImage(blob);
+        uploadDocument(blob, 'PP');
+      })
+      .catch((error) => {
+        console.log('ImagePicker Error: ', error);
+      });
   };
 
-  launchCamera(options, async (response) => {
-    if (response.didCancel) {
-      console.log('User cancelled video recording');
-      return;
-    }
-
-    if (response.errorCode) {
-      console.log('Camera error:', response.errorMessage);
-      return;
-    }
-
-    const video = response.assets[0];
-    const filePath = video.uri;
-
-    try {
-      const base64Data = await RNFS.readFile(filePath, 'base64');
-      const blob = {
-        name: video.fileName || 'video.mp4',
-        uri: video.path,
-        type: video.type || 'video/mp4',
-        data: base64Data,
-      };
-
-      setVideoProfile(blob);
-      uploadDocument(blob, 'VP');
-    } catch (err) {
-      console.error('Error reading recorded video:', err);
-    }
-  });
-};
-
-
-// console.log('Recorded video:', VideoProfile);
-
-
-const pickImage = () => {
-  ImagePicker.openPicker({
-    width: 300,
-    height: 300,
-    cropping: true,
-    cropperCircleOverlay: true,
-  })
-  .then(async (image) => {
-    const base64Data = await RNFS.readFile(image.path, 'base64');
-    const blob = {
-      name: image.filename || 'profile.jpg',
-      type: image.mime,
-      uri: image.path,
-      data: base64Data,
+  const uploadDocument = async (data, type) => {
+    const payload = {
+      user_id: userId,
+      type: type,
+      file_name: data.name,
+      mime_type: data.type,
+      blob_file: data.data,
     };
 
-    setProfileImage(blob);
-    uploadDocument(blob, 'PP');
-  })
-  .catch((error) => {
-    console.log('ImagePicker Error: ', error);
-  });
-};
+    console.log('Payload:', payload);
 
+    try {
+      const response = await axios.post(API_ENDPOINTS.DOCS, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000, // Optional: increase timeout for big uploads
+      });
 
-const uploadDocument = async (data, type) => {
-  const payload = {
-    user_id: userId,
-    type: type,
-    file_name: data.name,
-    mime_type: data.type,
-    blob_file: data.data
+      console.log('Upload response:', response.data);
+
+      refetch();
+    } catch (error) {
+      console.error('Upload failed:', error.response?.data || error.message);
+    }
   };
-
-  console.log('Payload:', payload);
-
-  try {
-    const response = await axios.post( API_ENDPOINTS.DOCS,
-      payload
-    );
-
-    refetch();
-  } catch (error) {
-    console.error('Upload failed:', error);
-  }
-};
-
-
-
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -233,36 +234,50 @@ const uploadDocument = async (data, type) => {
     fetchUserId();
   }, []);
 
-  
-    const { profileDetail, isLoading, isError , refetch} = useFetchProfileDetail(userId);
 
 
+  const { profileDetail, isLoading, isError, refetch } = useFetchProfileDetail(userId);
+
+
+
+  useEffect(()=>{
+    profileDetail.education.map((educ)=>{
+    
+        setDoneQulified((prev)=>[...prev,educ.education
+
+        ])
+      
+    })
+  } ,[profileDetail.education])
+
+  console.log ('Done Qualified:', DoneQulaified);
 
   useEffect(() => {
     if (profileDetail && Object.keys(profileDetail).length > 0) {
-      console.log('Profile:', profileDetail);
       setData(profileDetail);
     }
 
-    setProfileImage (profileDetail?.docs?.pp_url ? { uri: profileDetail?.docs?.pp_url } : require('../../../assets/image/profileIcon.png'));
+    setProfileImage(
+      profileDetail?.docs?.pp_url
+        ? { uri: profileDetail?.docs?.pp_url }
+        : require('../../../assets/image/profileIcon.png')
+    );
 
     const resumeData = {
-      name : profileDetail?.docs?.resume_file_name,
-      url : profileDetail?.docs?.resume_file_url,
-    }
+      name: profileDetail?.docs?.resume_file_name,
+      url: profileDetail?.docs?.resume_file_url,
+    };
 
     const videoData = {
-      name : profileDetail?.docs?.vid_pro_name,
-      url : profileDetail?.docs?.vid_pro_url,
+      name: profileDetail?.docs?.vid_pro_name,
+      url: profileDetail?.docs?.vid_pro_url,
+    };
+
+    if (profileDetail?.docs) {
+      setResume(resumeData);
     }
-
-    if(profileDetail?.docs){setResume(resumeData);}
     setVideoProfile(videoData);
-
-    console.log('Resume:', resume);
-
   }, [profileDetail]);
-  
 
   useEffect(() => {
     if (sideBar) {
@@ -294,73 +309,193 @@ const uploadDocument = async (data, type) => {
     }
   }, [sideBar, slideAnim, fadeAnim]);
 
-  console.log('asd');
-
   const VideoPop = ({ onClose }) => {
-    const translateY = useRef(new Animated.Value(0)).current;
-    const panResponder = useRef(
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gestureState) =>
-          gestureState.dy > 5 || gestureState.dy < -5,
-        onPanResponderMove: Animated.event([null, { dy: translateY }], { useNativeDriver: false }),
-        onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dy > 100) {
-            Animated.timing(translateY, {
-              toValue: height,
-              duration: 300,
-              useNativeDriver: false,
-            }).start(onClose);
-          } else {
-            Animated.spring(translateY, {
-              toValue: 0,
-              useNativeDriver: false,
-            }).start();
-          }
-        },
-      })
-    ).current;
+      const translateY = useRef(new Animated.Value(0)).current;
 
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        gestureState.dy > 5, // only respond to downward swipes
+      onPanResponderMove: Animated.event([null, { dy: translateY }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100) {
+          Animated.timing(translateY, {
+            toValue: height,
+            duration: 300,
+            useNativeDriver: false,
+          }).start(onClose);
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+  
     return (
       <Animated.View
-        style={[styles.VideoPop, { transform: [{ translateY }] }]}
+      style={[styles.VideoPop, { transform: [{ translateY }] }]}
+      {...panResponder.panHandlers}
+      >
+      <Text style={styles.title}>Add video profile</Text>
+      <Text style={styles.subtitle}>
+        Supported file format: MP4, Max size: 225mb, Video length: 30 sec to 2min
+      </Text>
+    
+      <View style={styles.buttonContainer}>
+        <View>
+        <TouchableOpacity onPress={recordVideo} style={styles.videoIconButton}>
+          <Image
+          source={require('../../../assets/image/camera.png')}
+          style={styles.videoIcon}
+          />
+        </TouchableOpacity>
+        <Text style={styles.buttonText}>Record Now</Text>
+        </View>
+    
+        <View>
+        <TouchableOpacity onPress={uploadVideo} style={styles.videoIconButton}>
+          <Image
+          source={require('../../../assets/image/uploadFile.png')}
+          style={styles.videoIcon}
+          />
+        </TouchableOpacity>
+        <Text style={styles.buttonText}>Upload video</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        onPress={onClose}
+        style={{
+        position: 'absolute',
+        top: 10,
+        right: 20,
+        padding: 10,
+        zIndex: 10,
+        }}
+      >
+        <Ionicons name="close" size={24} color="#000" />
+      </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const JobSearchStatus = ({ onClose, onSelect }) => {
+    const [selectedOption, setSelectedOption] = useState(null);
+    
+    const options = [
+      { label: 'Actively searching jobs', value: 'actively_searching' },
+      { label: 'Preparing for interview', value: 'preparing_interview' },
+      { label: 'Appearing for interview', value: 'appearing_interview' },
+      { label: 'Received a job offer', value: 'received_offer' },
+      { label: 'Negotiating offer', value: 'negotiating_offer' },
+      { label: 'Casually exploring jobs', value: 'casually_exploring' },
+      { label: 'Not looking for jobs', value: 'not_looking' },
+    ];
+  
+    const translateY = useRef(new Animated.Value(0)).current;
+    
+   
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        gestureState.dy > 5, // only respond to downward swipes
+      onPanResponderMove: Animated.event([null, { dy: translateY }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100) {
+          Animated.timing(translateY, {
+            toValue: height,
+            duration: 300,
+            useNativeDriver: false,
+          }).start(onClose);
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+  
+    const handleSelect = (option) => {
+      setSelectedOption(option);
+    };
+  
+    const handleSetNow = () => {
+      if (selectedOption) {
+        onSelect?.(selectedOption);
+        onClose();
+      }
+    };
+  
+    return (
+      <Animated.View
+        style={[
+          styles.VideoPop, 
+          { 
+            transform: [{ translateY }],
+            height: height - 150,
+            gap: 15,
+            paddingHorizontal: 30
+          }
+        ]}
         {...panResponder.panHandlers}
       >
-        <Text style={styles.title}>Add video profile</Text>
-        <Text style={styles.subtitle}>
-          Supported file format: MP4, Max size: 225mb, Video length: 30 sec to 2min
+        <Text style={styles.title}>Where are you in your job search journey?</Text>
+        {options.map((option, index) => {
+  const isSelected = selectedOption?.value === option.value;
+  return (
+    <TouchableOpacity
+      key={index}
+      style={[
+        styles.optionButton,
+        isSelected && styles.selectedOption
+      ]}
+      onPress={() => handleSelect(option)}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text 
+          style={[
+            styles.optionText,
+            isSelected && styles.selectedOptionText
+          ]}
+        >
+          {option.label}
         </Text>
-        <View style={styles.buttonContainer}>
-          <View>
-            <TouchableOpacity onPress={recordVideo} style={styles.videoIconButton}>
-              <Image
-                source={require('../../../assets/image/camera.png')}
-                style={styles.videoIcon}
-              />
-            </TouchableOpacity>
-            <Text style={styles.buttonText}>Record Now</Text>
-          </View>
+        {isSelected && (
+        <Ionicons name='checkmark' size={20} color={Colors.primary} style={{ marginLeft: 10 }} />
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+})}
 
-          <View>
-            <TouchableOpacity onPress={uploadVideo} style={styles.videoIconButton}>
-              <Image
-                source={require('../../../assets/image/uploadFile.png')}
-                style={styles.videoIcon}
-              />
-            </TouchableOpacity>
-            <Text style={styles.buttonText}>Upload video</Text>
-          </View>
+        <View style={{width: '100%', alignItems: 'flex-end', justifyContent: 'center'}}>
+          <TouchableOpacity 
+            style={[
+              styles.setButton,
+              !selectedOption && styles.disabledButton
+            ]} 
+            onPress={handleSetNow}
+            disabled={!selectedOption}
+          >
+            <Text style={styles.setButtonText}>Set Now</Text>
+          </TouchableOpacity>
         </View>
       </Animated.View>
     );
   };
 
- 
-
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg, padding: 0 }]}>
-
-    
-   
       {VideoPopMenu && (
         <View
           style={[
@@ -376,6 +511,24 @@ const uploadDocument = async (data, type) => {
           <VideoPop onClose={() => setVideoPopMenu(false)} />
         </View>
       )}
+
+{JobSearchStatusMenu && (
+        <View
+          style={[
+            styles.overlay,
+            {
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+            },
+          ]}
+        >
+          <JobSearchStatus onClose={() => setJobSearchStatusMenu(false)} />
+        </View>
+      )}
+
+
       <StatusBar backgroundColor="#FFFDF7" translucent={false} barStyle={'dark-content'} />
 
       <KeyboardAvoidingView
@@ -469,6 +622,7 @@ const uploadDocument = async (data, type) => {
                   {profileDetail?.introduction?.full_name || 'User'}
                 </Text>
                 <TouchableOpacity
+                  style={{padding: 5}}
                   onPress={() => {
                     navigation.navigate('IntroMenu', {
                       data: profileDetail?.introduction,
@@ -502,6 +656,9 @@ const uploadDocument = async (data, type) => {
 
             {/* Job Search Status */}
             <TouchableOpacity
+              onPress={() => {
+                setJobSearchStatusMenu(true);
+              }}
               style={{
                 flexDirection: 'row',
                 height: 40, // Increased height for better spacing
@@ -607,6 +764,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Basic Details</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() =>
                     navigation.navigate('BasicDetail', {
                       data: profileDetail?.basicDetails,
@@ -708,7 +866,7 @@ const uploadDocument = async (data, type) => {
             </View>
 
             {/* Resume Card */}
-         <View
+            <View
               style={{
                 marginHorizontal: 20,
                 marginBottom: 20,
@@ -725,11 +883,18 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Resume</Text>
                 {resume?.name && (
-                  <TouchableOpacity onPress={pickDocument}>
-                    <Text style={{ fontSize: 16, color: '#14B6AA' }}>
-                      {resume?.name ? 'Edit' : 'Upload'}
-                    </Text>
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 30 }}>
+                    <TouchableOpacity onPress={() => navigation.navigate('CreateResume')}>
+                      <Text style={[style.m16, { color: '#14B6AA' }]}>
+                        {resume?.name && 'Build'}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={pickDocument}>
+                      <Text style={[style.m16, { color: '#14B6AA' }]}>
+                        {resume?.name ? 'Edit' : 'Upload'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
 
@@ -749,15 +914,18 @@ const uploadDocument = async (data, type) => {
                 <View>
                   {resume?.name ? (
                     <>
-                      <Text style={{ fontSize: 16, color: '#333' , width: 250}}>{resume.name}</Text>
+                      <Text style={{ fontSize: 16, color: '#333', width: 250 }}>{resume.name}</Text>
                       <Text style={{ fontSize: 14, color: '#666' }}>
-                      <TouchableOpacity onPress={() => navigation.navigate('PdfViewer', {
-                   pdfUrl: resume?.url,
-              fileName: resume?.name
-            })}> 
-            
-            <Text style={{ color: '#14B6AA', fontSize: 14 }}>View Resume</Text>
-            </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            navigation.navigate('PdfViewer', {
+                              pdfUrl: resume?.url,
+                              fileName: resume?.name,
+                            })
+                          }
+                        >
+                          <Text style={{ color: '#14B6AA', fontSize: 14 }}>View Resume</Text>
+                        </TouchableOpacity>
                       </Text>
                     </>
                   ) : (
@@ -810,7 +978,7 @@ const uploadDocument = async (data, type) => {
               </View>
             </View>
             {/* Video Profile */}
-           <View
+            <View
               style={{
                 marginHorizontal: 20,
                 marginBottom: 20,
@@ -847,23 +1015,26 @@ const uploadDocument = async (data, type) => {
                 <View style={{ flex: 1 }}>
                   {/* Added flex: 1 to ensure proper text wrapping */}
                   <Text style={[style.m14, { color: '#333' }]}>
-               {VideoProfile?.name ? VideoProfile?.name : ' Improve your hiring chance by 30% by adding a video'}
+                    {VideoProfile?.name
+                      ? VideoProfile?.name
+                      : ' Improve your hiring chance by 30% by adding a video'}
                   </Text>
                   {VideoProfile?.name ? (
-                 
-  <TouchableOpacity onPress={() => navigation.navigate('VideoViewer', {
-                    videoUrl: VideoProfile?.url,
-              fileName: VideoProfile?.name
-            })}> 
-            
-            <Text style={{ color: '#14B6AA', fontSize: 14 }}>View Video</Text>
-            </TouchableOpacity>
-                    
-                  ) : 
-                   <Text style={[style.r12, { color: '#666' }]}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('VideoViewer', {
+                          videoUrl: VideoProfile?.url,
+                          fileName: VideoProfile?.name,
+                        })
+                      }
+                    >
+                      <Text style={{ color: '#14B6AA', fontSize: 14 }}>View Video</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={[style.r12, { color: '#666' }]}>
                       Recruiters prefer candidates with a video Profile
                     </Text>
-                  }
+                  )}
                 </View>
               </View>
             </View>
@@ -885,6 +1056,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Profile Summary</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() => {
                     navigation.navigate('ProfileSummary', {
                       data: profileDetail?.profileSummary,
@@ -921,6 +1093,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Professional Details</Text>
                 <TouchableOpacity
+                  style={{padding: 5}}
                   onPress={() =>
                     navigation.navigate('ProfessionalDetail', {
                       data: profileDetail?.professionalDetail,
@@ -988,6 +1161,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Key Skills</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() =>
                     navigation.navigate('Skills', { data: profileDetail?.skill, id: userId })
                   }
@@ -1027,8 +1201,8 @@ const uploadDocument = async (data, type) => {
                   ))}
                 </View>
               ) : (
-                <View style={{ alignItems: 'center', padding: 10 }}>
-                  <Text style={[style.r12, { color: '#666', textAlign: 'center' }]}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
                     Add your skills to highlight your expertise
                   </Text>
                 </View>
@@ -1057,7 +1231,9 @@ const uploadDocument = async (data, type) => {
                 }}
               >
                 <Text style={[style.m18, { color: '#000' }]}>Employment</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Employment', { id: userId })}>
+                <TouchableOpacity
+                 style={{padding: 5}}
+                 onPress={() => navigation.navigate('Employment', { id: userId })}>
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1065,51 +1241,50 @@ const uploadDocument = async (data, type) => {
               {/* Employment List or Empty State */}
               {data?.employment?.length > 0 ? (
                 <View>
-                  {data.employment
-                    .map((emp, index) => (
-                      <TouchableOpacity
-                        onPress={() => navigation.navigate('Employment', { emp: emp, id: userId })}
-                        key={emp.emp_id}
+                  {data.employment.map((emp, index) => (
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('Employment', { emp: emp, id: userId })}
+                      key={emp.emp_id}
+                      style={{
+                        marginBottom: 12,
+                        borderBottomWidth: index !== data.employment.length - 1 ? 1 : 0,
+                        borderColor: '#f0f0f0',
+                        paddingBottom: index !== data.employment.length - 1 ? 20 : 0,
+                      }}
+                    >
+                      {/* Job Title and Edit Icon */}
+                      <View
                         style={{
-                          marginBottom: 12,
-                          borderBottomWidth: index !== data.employment.length - 1 ? 1 : 0,
-                          borderColor: '#f0f0f0',
-                          paddingBottom: index !== data.employment.length - 1 ? 20 : 8,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        {/* Job Title and Edit Icon */}
-                        <View
-                          style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                          }}
+                        <Text
+                          style={{ fontSize: 16, color: 'black', fontWeight: '600', padding: 2 }}
                         >
-                          <Text
-                            style={{ fontSize: 16, color: 'black', fontWeight: '600', padding: 2 }}
-                          >
-                            {emp.curr_job_title}
-                          </Text>
-                        </View>
+                          {emp.curr_job_title}
+                        </Text>
+                      </View>
 
-                        {/* Company and Duration Details */}
-                        <Text style={{ fontSize: 12, color: '#888', padding: 2 }}>
-                          {emp.curr_company_name}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: '#888' }}>
-                          {emp.joining_date}{' '}
-                          {emp.isCurrentCompany &&
-                            `(${emp.total_exp_in_years}y ${emp.total_exp_in_months}m)`}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                      {/* Company and Duration Details */}
+                      <Text style={{ fontSize: 12, color: '#888', padding: 2 }}>
+                        {emp.curr_company_name}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: '#888' }}>
+                        {emp.joining_date}{' '}
+                        {emp.isCurrentCompany &&
+                          `(${emp.total_exp_in_years}y ${emp.total_exp_in_months}m)`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
               ) : (
-                <View style={{ alignItems: 'center', padding: 10 }}>
-                  <Text style={[style.r12, { color: '#666', textAlign: 'center' }]}>
-                    No employment details added yet. Click "Add" to showcase your work experience.
-                  </Text>
-                </View>
+                <View style={{ }}>
+                <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
+                  No experience added yet. Click "Add" to showcase your work experience.
+                </Text>
+              </View>
               )}
             </View>
             {/* Project Details */}
@@ -1135,6 +1310,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Projects</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() => navigation.navigate('ProjectDetail', { id: userId })}
                 >
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
@@ -1154,7 +1330,7 @@ const uploadDocument = async (data, type) => {
                         marginBottom: 12,
                         borderBottomWidth: index !== profileDetail?.projects.length - 1 ? 1 : 0,
                         borderColor: '#f0f0f0',
-                        paddingBottom: index !== profileDetail?.projects.length - 1 ? 20 : 8,
+                        paddingBottom: index !== profileDetail?.projects.length - 1 ? 20 : 0,
                       }}
                     >
                       {/* Project Title and Edit Icon */}
@@ -1187,9 +1363,9 @@ const uploadDocument = async (data, type) => {
                   ))}
                 </View>
               ) : (
-                <View style={{ alignItems: 'center', padding: 10 }}>
-                  <Text style={[style.r12, { color: '#666', textAlign: 'center' }]}>
-                    No projects added yet. Click "Add" to showcase your work experience.
+                <View style={{ }}>
+                  <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
+                    No projects added yet. Click "Add" to showcase your skills
                   </Text>
                 </View>
               )}
@@ -1211,7 +1387,9 @@ const uploadDocument = async (data, type) => {
                 style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}
               >
                 <Text style={[style.m18, { color: '#000' }]}>Education</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Education')}>
+                <TouchableOpacity
+                 style={{padding: 5}}
+                 onPress={() => navigation.navigate('Education' , {done: DoneQulaified})}>
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1219,13 +1397,13 @@ const uploadDocument = async (data, type) => {
               {profileDetail?.education?.length > 0 ? (
                 profileDetail?.education.map((edu, index) => (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate('Education', { edu: edu, id: userId })}
+                    onPress={() => navigation.navigate('Education', { edu: edu, id: userId  })}
                     key={edu.id}
                     style={{
                       marginBottom: 12,
                       borderBottomWidth: index !== profileDetail?.education?.length - 1 ? 1 : 0,
                       borderColor: '#f0f0f0',
-                      paddingBottom: index !== profileDetail?.education?.length - 1 ? 10 : 8,
+                      paddingBottom: index !== profileDetail?.education?.length - 1 ? 10 : 0,
                     }}
                   >
                     <View
@@ -1260,7 +1438,11 @@ const uploadDocument = async (data, type) => {
                   </TouchableOpacity>
                 ))
               ) : (
-                <Text>No Education Added</Text>
+                <View style={{ }}>
+                  <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
+                    No Education details added yet. Click "Add" to showcase your qualifications.
+                  </Text>
+                </View>
               )}
             </View>
             {/* Personal Details */}
@@ -1282,6 +1464,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Personal Details</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() =>
                     navigation.navigate('PersonalDetails', {
                       id: userId,
@@ -1346,7 +1529,9 @@ const uploadDocument = async (data, type) => {
                 style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}
               >
                 <Text style={[style.m18, { color: '#000' }]}>Languages</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Language', { id: userId })}>
+                <TouchableOpacity
+                 style={{padding: 5}}
+                 onPress={() => navigation.navigate('Language', { id: userId })}>
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1391,6 +1576,7 @@ const uploadDocument = async (data, type) => {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Career Preference</Text>
                 <TouchableOpacity
+                 style={{padding: 5}}
                   onPress={() =>
                     navigation.navigate('Career', {
                       id: userId,
@@ -1419,14 +1605,16 @@ const uploadDocument = async (data, type) => {
                   <View style={{ marginBottom: 12 }}>
                     <Text style={[style.r11, { color: '#888' }]}>Preferred Location</Text>
                     <Text style={[style.m12, { color: '#333' }]}>
-                      {profileDetail?.careerPreference?.prefered_location || 'Not specified'}
+                    {(profileDetail?.careerPreference?.prefered_location?.length > 30
+  ? profileDetail.careerPreference.prefered_location.slice(0, 30) + '...'
+  : profileDetail?.careerPreference?.prefered_location) || 'Not specified'}
                     </Text>
                   </View>
 
                   <View style={{ marginBottom: 12 }}>
                     <Text style={[style.r11, { color: '#888' }]}>Salary Expectation</Text>
                     <Text style={[style.m12, { color: '#333' }]}>
-                      {profileDetail?.careerPreference?.currency || 'N/A'} {' '}
+                      {profileDetail?.careerPreference?.currency || 'N/A'}{' '}
                       {profileDetail?.careerPreference?.current_annual_salary || 'Not specified'}
                     </Text>
                   </View>
@@ -1490,6 +1678,7 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: 'bold',
     fontFamily: 'Poppins',
+    marginBottom: 10,
   },
   subtitle: {
     textAlign: 'center',
@@ -1541,4 +1730,41 @@ const styles = StyleSheet.create({
     zIndex: 1002, // Higher than overlay
     backgroundColor: 'white', // Make sure it has a background
   },
+
+  optionButton: {
+   width: '100%',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#D5D9DF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    backgroundColor: 'white',
+  },
+
+  optionText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6F6F6F',
+    marginLeft: 10,
+  },
+
+  setButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+  },
+  setButtonText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#fff',
+  },
+  selectedOption: {
+    borderColor: Colors.primary,
+    backgroundColor: '#EEFFFE'
+  }
 });

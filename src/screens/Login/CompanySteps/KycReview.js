@@ -1,4 +1,12 @@
-import { StyleSheet, Text, View, Image, TouchableOpacity , BackHandler, StatusBar } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  BackHandler,
+  StatusBar,
+} from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Colors } from '../../../theme/color';
 
@@ -7,13 +15,13 @@ const KycReview = () => {
   const [alert, setAlert] = useState({
     image: require('../../../../assets/image/a3.png'),
     message: 'GST Certificate uploaded successfully',
-     subMessage: 'We will begin verification shortly.',
-  
+    subMessage: 'We will begin verification shortly.',
+
     TextColor: Colors.primary,
   });
 
   useEffect(() => {
-        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => true)
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
     const timer = setTimeout(() => {
       setAlert({
         image: require('../../../../assets/image/pending.png'),
@@ -36,8 +44,6 @@ const KycReview = () => {
 
       <Text style={[styles.title, { color: alert.TextColor }]}>{alert.message}</Text>
       <Text style={[styles.subTitle, { color: alert.TextColor }]}>{alert.subMessage}</Text>
-
-
 
       {verified && (
         <TouchableOpacity style={styles.button}>

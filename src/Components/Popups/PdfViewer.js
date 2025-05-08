@@ -1,13 +1,6 @@
 // PdfViewer.js
 import React, { useState } from 'react';
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-} from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
 import { WebView } from 'react-native-webview';
@@ -15,27 +8,27 @@ import { WebView } from 'react-native-webview';
 const PdfViewer = ({ route, navigation }) => {
   const { pdfUrl, fileName } = route.params;
 
-  console.log(pdfUrl)
-
-
+  console.log(pdfUrl);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={Colors.bg} barStyle="dark-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{fileName || 'Resume'}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {fileName || 'Resume'}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 
       <View style={styles.pdfContainer}>
         <WebView
-          source={{ uri: `https://docs.google.com/gview?embedded=true&url=${pdfUrl}` }} 
-          style={{ flex: 1 }} 
+          source={{ uri: `https://docs.google.com/gview?embedded=true&url=${pdfUrl}` }}
+          style={{ flex: 1 }}
         />
       </View>
     </SafeAreaView>

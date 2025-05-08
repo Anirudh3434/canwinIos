@@ -9,6 +9,7 @@ import {
   StatusBar,
   FlatList,
   ActivityIndicator,
+  BackHandler,
   ScrollView
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -82,6 +83,23 @@ function JobList() {
 
 
   console.log('filtersData', filtersData);
+
+
+
+  const backAction = () => {
+    if (navigation.isFocused()) {
+      navigation.navigate('Search');
+      return true;
+    }
+  }
+
+   useEffect(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+  
+      return () => backHandler.remove();
+    }, [navigation]);
+
+
 
   useEffect(() => {
     // Apply filters when filtersData changes
@@ -286,11 +304,11 @@ const applyFilters = () => {
       
       </View>
       <View style={styles.ratingContainer}>
-        <Image
-          source={require('../../../assets/image/a1.png')}
-          style={styles.jobImage}
-          resizeMode="contain"
-        />
+      <Image
+  source={{ uri: item.company_logo }}
+  style={styles.jobImage}
+  resizeMode="contain"
+/>
         <View style={styles.ratingInfo}>
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={18} color="#FFC107" />

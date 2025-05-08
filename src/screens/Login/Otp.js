@@ -26,15 +26,15 @@ export default function Otp() {
   const route = useRoute();
   const { phoneNumber, confirmation, type } = route.params || {};
   const navigation = useNavigation();
-  
+
   // States
   const [userId, setUserId] = useState(null);
   const [otp, setOtp] = useState(Array(6).fill(''));
   const [activeInput, setActiveInput] = useState(0);
-  const [timer, setTimer] = useState(345); // 5 minutes 45 seconds
+  const [timer, setTimer] = useState(70); // 5 minutes 45 seconds
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  
+
   // Refs
   const inputRefs = useRef([]);
   const timerRef = useRef(null);
@@ -51,12 +51,12 @@ export default function Otp() {
         console.error('Error fetching userId:', error);
       }
     };
-    
+
     fetchUserId();
-    
+
     // Start timer
     startTimer();
-    
+
     // Clean up timer on unmount
     return () => {
       if (timerRef.current) {
@@ -70,9 +70,9 @@ export default function Otp() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    
+
     timerRef.current = setInterval(() => {
-      setTimer(prevTime => {
+      setTimer((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timerRef.current);
           return 0;
@@ -89,46 +89,52 @@ export default function Otp() {
   }, []);
 
   // OTP input handlers
-  const handleOtpChange = useCallback((text, index) => {
-    if (!/^\d*$/.test(text)) return; // Only allow digits
-    
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-    
-    // Auto-focus next input
-    if (text.length === 1 && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-    
-    // Auto-submit when all digits are entered
-    if (text.length === 1 && index === 5) {
-      const completeOtp = [...newOtp.slice(0, 5), text].join('');
-      if (completeOtp.length === 6) {
-        // Small delay to allow UI to update before verification
-        setTimeout(() => {
-          verifyOtp(completeOtp);
-        }, 300);
-      }
-    }
-  }, [otp]);
+  const handleOtpChange = useCallback(
+    (text, index) => {
+      if (!/^\d*$/.test(text)) return; // Only allow digits
 
-  const handleKeyPress = useCallback((e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }, [otp]);
+      const newOtp = [...otp];
+      newOtp[index] = text;
+      setOtp(newOtp);
+
+      // Auto-focus next input
+      if (text.length === 1 && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+
+      // Auto-submit when all digits are entered
+      if (text.length === 1 && index === 5) {
+        const completeOtp = [...newOtp.slice(0, 5), text].join('');
+        if (completeOtp.length === 6) {
+          // Small delay to allow UI to update before verification
+          setTimeout(() => {
+            verifyOtp(completeOtp);
+          }, 300);
+        }
+      }
+    },
+    [otp]
+  );
+
+  const handleKeyPress = useCallback(
+    (e, index) => {
+      if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    },
+    [otp]
+  );
 
   // Paste entire OTP function
   const handlePasteOtp = useCallback(async () => {
     try {
       const clipboardContent = await Clipboard.getString();
-      
+
       // Check if clipboard content is a 6-digit number
       if (/^\d{6}$/.test(clipboardContent)) {
         const otpDigits = clipboardContent.split('');
         setOtp(otpDigits);
-        
+
         // Focus the last input
         inputRefs.current[5]?.focus();
       }
@@ -140,14 +146,14 @@ export default function Otp() {
   // API interactions
   const resendOTP = async () => {
     if (timer > 0 || isResending) return;
-    
+
     setIsResending(true);
-    
+
     try {
       // Reset the timer
-      setTimer(345);
+      setTimer(70);
       startTimer();
-      
+
       // Logic to resend OTP using Firebase
       const newConfirmation = await auth().signInWithPhoneNumber(phoneNumber);
       route.params.confirmation = newConfirmation;
@@ -162,7 +168,7 @@ export default function Otp() {
 
   const verifyOtp = async (manualOtp = null) => {
     const otpCode = manualOtp || otp.join('');
-    
+
     if (otpCode.length !== 6) {
       Alert.alert('Error', 'Please enter the complete 6-digit OTP');
       return;
@@ -170,20 +176,38 @@ export default function Otp() {
 
     if (isVerifying) return; // Prevent double submission
     setIsVerifying(true);
-    
+
     try {
       // Verify with Firebase
       await confirmation.confirm(otpCode);
-      
+
       // Update user progress in backend
       if (userId) {
         try {
-          const response = await axios.post(API_ENDPOINTS.STEP, { 
-            user_id: userId,  
-            steps: '2' 
+          const response = await axios.post(API_ENDPOINTS.STEP, {
+            user_id: userId,
+            steps: '2',
           });
-          
+
           if (response.data.status === 'success') {
+
+            try {
+              const updateNumber = axios.post(API_ENDPOINTS.BASIC_DETAILS, {
+                user_id: userId,
+                mobile_no: phoneNumber,
+              })
+
+              if(updateNumber.data.status === 'success') {
+                console.log('Mobile number updated successfully');
+                navigation.navigate('Validate');
+              }
+
+            } catch (error) {
+              console.error('Error updating mobile number:', error);
+            
+              
+            }
+
             navigation.navigate('Validate');
           } else {
             throw new Error('Failed to update progress');
@@ -191,21 +215,16 @@ export default function Otp() {
         } catch (error) {
           console.error('Error updating step:', error);
           Alert.alert(
-            'Error', 
+            'Error',
             'Your OTP was verified, but we had trouble updating your progress. Please try again.'
           );
-      
-
         }
       } else {
-        Alert.alert(
-          'Error', 
-          'User ID not found. Please restart the application and try again.'
-        );
+        Alert.alert('Error', 'User ID not found. Please restart the application and try again.');
       }
     } catch (error) {
       console.error('Invalid OTP:', error);
-      
+
       // Provide more specific error messages based on Firebase error codes
       if (error.code === 'auth/invalid-verification-code') {
         Alert.alert('Error', 'The OTP you entered is incorrect. Please try again.');
@@ -215,7 +234,7 @@ export default function Otp() {
       } else {
         Alert.alert('Error', 'Verification failed. Please try again.');
       }
-      
+
       // Clear OTP fields on error
       setOtp(Array(6).fill(''));
       inputRefs.current[0]?.focus();
@@ -233,8 +252,8 @@ export default function Otp() {
             color={Colors.bg}
             elevation={0}
             leading={
-              <TouchableOpacity 
-                onPress={() => navigation.goBack()} 
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
                 style={style.icon}
                 disabled={isVerifying}
               >
@@ -289,37 +308,28 @@ export default function Otp() {
               ))}
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 15 }}>
-              <TouchableOpacity onPress={handlePasteOtp} style={{ padding: 8 }}>
-                <Text style={{ color: Colors.primary, fontFamily: 'Poppins-Medium', fontSize: 14 }}>
-                  Paste OTP
-                </Text>
-              </TouchableOpacity>
-            </View>
-
             <Text
-              style={[
-                style.m14,
-                { color: Colors.disable2, marginTop: 20, textAlign: 'center' },
-              ]}
+              style={[style.m14, { color: Colors.disable2, marginTop: 20, textAlign: 'center' }]}
             >
               Resend code in <Text style={{ color: Colors.primary }}>{formatTime(timer)}</Text>
             </Text>
-            
+
             {timer === 0 && (
-              <TouchableOpacity 
-                onPress={resendOTP} 
+              <TouchableOpacity
+                onPress={resendOTP}
                 disabled={isResending || isVerifying}
-                style={{ 
-                  marginTop: 15, 
+                style={{
+                  marginTop: 15,
                   alignItems: 'center',
-                  opacity: isResending || isVerifying ? 0.7 : 1
+                  opacity: isResending || isVerifying ? 0.7 : 1,
                 }}
               >
                 {isResending ? (
                   <ActivityIndicator size="small" color={Colors.primary} />
                 ) : (
-                  <Text style={{ color: Colors.primary, fontFamily: 'Poppins-Medium', fontSize: 14 }}>
+                  <Text
+                    style={{ color: Colors.primary, fontFamily: 'Poppins-Medium', fontSize: 14 }}
+                  >
                     Resend OTP
                   </Text>
                 )}
@@ -330,15 +340,17 @@ export default function Otp() {
             onPress={() => verifyOtp()}
             disabled={isVerifying || isResending || otp.join('').length !== 6}
             style={[
-              style.btn, 
-              { 
-                marginVertical: 20, 
-                opacity: isVerifying || isResending || otp.join('').length !== 6 ? 0.7 : 1 
-              }
+              style.btn,
+              {
+                marginVertical: 20,
+                opacity: isVerifying || isResending || otp.join('').length !== 6 ? 0.7 : 1,
+              },
             ]}
           >
             {isVerifying ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}
+              >
                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 10 }} />
                 <Text style={style.btntxt}>VERIFYING</Text>
               </View>

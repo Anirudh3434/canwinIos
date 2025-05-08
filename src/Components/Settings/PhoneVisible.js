@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
@@ -12,7 +20,7 @@ const DiscoverbyPhone = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -28,10 +36,7 @@ const DiscoverbyPhone = () => {
 
       {/* Options */}
       <View style={styles.optionsContainer}>
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setSelectedOption('No one')}
-        >
+        <TouchableOpacity style={styles.checkboxRow} onPress={() => setSelectedOption('No one')}>
           <Checkbox
             status={selectedOption === 'No one' ? 'checked' : 'unchecked'}
             color={Colors.primary}
@@ -50,10 +55,7 @@ const DiscoverbyPhone = () => {
           <Text style={styles.checkboxText}>Your Connection</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setSelectedOption('AnyOne')}
-        >
+        <TouchableOpacity style={styles.checkboxRow} onPress={() => setSelectedOption('AnyOne')}>
           <Checkbox
             status={selectedOption === 'AnyOne' ? 'checked' : 'unchecked'}
             color={Colors.primary}
@@ -61,9 +63,6 @@ const DiscoverbyPhone = () => {
           <Text style={styles.checkboxText}>AnyOne</Text>
         </TouchableOpacity>
       </View>
-
-    
-      
     </SafeAreaView>
   );
 };

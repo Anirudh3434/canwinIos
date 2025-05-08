@@ -34,21 +34,21 @@ import JobDetail from '../screens/Home/JobDetail';
 import CDetail from '../screens/Home/CDetail';
 import category from '../screens/Login/Catorgy';
 import Location from '../screens/Login/Location';
-import IntroMenu from '../screens/Account/IntroductionMenu';
-import BasicDetail from '../screens/Account/BasicDetail';
-import Education from '../screens/Account/Education';
-import ResumeForm from '../screens/Account/resumeInfoForm';
-import ResumeTemp from '../screens/Account/resumeTemplete';
-import ProfileSummary from '../screens/Account/profileSummary';
-import ProfessionalDetail from '../screens/Account/professionalDetail';
-import Employment from '../screens/Account/employment';
-import ProjectDetail from '../screens/Account/projectDetail';
-import PersonalDetail from '../screens/Account/personalDetails';
-import Language from '../screens/Account/language';
-import Career from '../screens/Account/career';
-import SkillMenu from '../screens/Account/skills';
-import CreateResume from '../screens/Account/createResume';
-import SocialLinks from '../screens/Account/SocialLinks';
+import IntroMenu from '../screens/Account/Modals/IntroductionMenu';
+import BasicDetail from '../screens/Account/Modals/BasicDetail';
+import Education from '../screens/Account/Modals/Education';
+import ResumeForm from '../screens/Account/Modals/resumeInfoForm';
+import ResumeTemp from '../screens/Account/Modals/resumeTemplete';
+import ProfileSummary from '../screens/Account/Modals/profileSummary';
+import ProfessionalDetail from '../screens/Account/Modals/professionalDetail';
+import Employment from '../screens/Account/Modals/employment';
+import ProjectDetail from '../screens/Account/Modals/projectDetail';
+import PersonalDetail from '../screens/Account/Modals/personalDetails';
+import Language from '../screens/Account/Modals/language';
+import Career from '../screens/Account/Modals/career';
+import SkillMenu from '../screens/Account/Modals/skills';
+import CreateResume from '../screens/Account/Modals/createResume';
+import SocialLinks from '../screens/Account/Modals/SocialLinks';
 import JobList from '../screens/Search/JobList';
 import LinkedinVerify from '../screens/Login/LinkedinVerify';
 import CVId from '../screens/Login/CVId';
@@ -61,14 +61,14 @@ import KycReview from '../screens/Login/CompanySteps/KycReview';
 import VistorProfile from '../screens/Application/VistorProfile';
 import ManageApplication from '../screens/Application/MangeAppkicants';
 import Validate from '../hooks/vaildator';
-import ProfilePerformance from '../screens/Account/ProfilePerformance';
+import ProfilePerformance from '../screens/Account/Modals/ProfilePerformance';
 import AddJob from '../screens/Application/AddJob';
-import PlanPage from '../screens/Account/PlanPage';
-import CompanyDetailsModel from '../screens/Account/CompanyDetail';
-import CompanyAboutUs from '../screens/Account/CompanyAboutUs';
-import CompanyContactUs from '../screens/Account/CompanyContactUS';
-import CompanyProfile from '../screens/Account/CompanyName';
-import AddWorkplaceHighlights from '../screens/Account/allowance';
+import PlanPage from '../screens/Account/Modals/PlanPage';
+import CompanyDetailsModel from '../screens/Account/Modals/CompanyDetail';
+import CompanyAboutUs from '../screens/Account/Modals/CompanyAboutUs';
+import CompanyContactUs from '../screens/Account/Modals/CompanyContactUS';
+import CompanyProfile from '../screens/Account/Modals/CompanyName';
+import AddWorkplaceHighlights from '../screens/Account/Modals/allowance';
 import recommendedJobsList from '../screens/Search/recommentJobsList';
 import ManageJob from '../screens/Application/ManageJob';
 import PdfViewer from '../Components/Popups/PdfViewer';
@@ -79,6 +79,7 @@ import VisiblityOptions from '../Components/Settings/VisiblityOptions';
 import ProfileVisitVisibility from '../Components/Settings/ProfileVisitVisibility';
 import DiscoverByEmail from '../Components/Settings/EmaiVisible';
 import DiscoverByPhone from '../Components/Settings/PhoneVisible';
+import SaveJobList from '../screens/Search/SaveJobList';
 
 const Stack = createNativeStackNavigator();
 
@@ -87,53 +88,73 @@ const navigationRef = createNavigationContainerRef();
 
 const StackNavigator = () => {
   const [showSplashScreen, setShowSplashScreen] = useState(true);
+  const [initialJobId, setInitialJobId] = useState(null);
 
   // ✅ Function to handle the deep link navigation
   const handleDeepLink = (url) => {
-     if (url) {
-       console.log('🔹 Deep link URL:', url);
-       const match = url.match(/user=([^&]*)/); // Extract the encoded user data
- 
-       if (match && navigationRef.isReady()) {
-         const encodedUserData = match[1]; // Extract the parameter value
-         const decodedUser = decodeURIComponent(encodedUserData);
-         const userData = JSON.parse(decodedUser);
- 
-         console.log('✅ Extracted User Data:', userData);
- 
-         // ✅ Navigate to LinkedIn Verify with the token
-         navigationRef.navigate('LinkedinVerify', { userData });
-       }
-     }
-   };
- 
-   useEffect(() => {
-     // ✅ Handle splash screen
-     setTimeout(() => {
-       setShowSplashScreen(false);
-     }, 4000);
- 
-     // ✅ Check initial URL (for background or closed app)
-     const handleInitialURL = async () => {
-       const initialUrl = await Linking.getInitialURL();
-       if (initialUrl) {
-         handleDeepLink(initialUrl);
-       }
-     };
- 
-     handleInitialURL();
- 
-     // ✅ Listen for deep link events when the app is open
-     const deepLinkSubscription = Linking.addEventListener('url', (event) => {
-       handleDeepLink(event.url);
-     });
- 
-     return () => {
-       deepLinkSubscription.remove();
-     };
-   }, []);
+    if (!url) return;
 
+    console.log('🔹 Deep link URL:', url);
 
+    // Handle LinkedIn callback
+    const linkedinMatch = url.match(/user=([^&]*)/);
+    if (linkedinMatch && navigationRef.isReady()) {
+      const encodedUserData = linkedinMatch[1];
+      const decodedUser = decodeURIComponent(encodedUserData);
+      const userData = JSON.parse(decodedUser);
+      console.log('✅ Extracted LinkedIn User Data:', userData);
+      navigationRef.navigate('LinkedinVerify', { userData });
+      return;
+    }
+
+    // Handle job deep links
+    const jobMatch = url.match(/canwinn\.abacasys\.com\/job\/(\d+)/);
+    if (jobMatch && jobMatch[1]) {
+      const jobId = jobMatch[1];
+      console.log('✅ Extracted Job ID:', jobId);
+
+      if (navigationRef.isReady()) {
+        // Navigate directly to JobDetail screen with the job ID
+        navigationRef.navigate('JobDetail', { id: jobId, fromDeepLink: true });
+      } else {
+        // Store the jobId to use after navigation is ready
+        setInitialJobId(jobId);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (navigationRef.isReady() && initialJobId) {
+      navigationRef.navigate('JobDetail', { id: initialJobId, fromDeepLink: true });
+      setInitialJobId(null); // Clear after use
+    }
+  }, [initialJobId, navigationRef.isReady]);
+
+  useEffect(() => {
+    // Handle splash screen
+    setTimeout(() => {
+      setShowSplashScreen(false);
+    }, 4000);
+
+    // Check initial URL (for background or closed app)
+    const handleInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleDeepLink(initialUrl);
+      }
+    };
+
+    handleInitialURL();
+
+    // Listen for deep link events when the app is open
+    const deepLinkSubscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    return () => {
+      deepLinkSubscription.remove();
+    };
+  }, []);
 
   return (
     <NavigationContainer ref={navigationRef}>
@@ -173,7 +194,11 @@ const StackNavigator = () => {
           options={{ headerShown: false }}
         />
 
-        <Stack.Screen name='recommendedJobsList' component={recommendedJobsList} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="recommendedJobsList"
+          component={recommendedJobsList}
+          options={{ headerShown: false }}
+        />
 
         <Stack.Screen name="AddJob" component={AddJob} options={{ headerShown: false }} />
 
@@ -225,10 +250,12 @@ const StackNavigator = () => {
 
         <Stack.Screen name="On1" component={On1} options={{ headerShown: false }} />
         <Stack.Screen
-          name="ResumeTemplete"
+          name="Resume Templete"
           component={ResumeTemp}
-          options={{ headerShown: false }}
+        
         />
+
+        <Stack.Screen name='SaveJob' component={SaveJobList} options={{ headerShown: false }} />
 
         <Stack.Screen
           name="VistorProfile"
@@ -269,7 +296,11 @@ const StackNavigator = () => {
           options={{ headerShown: false }}
         />
 
-        <Stack.Screen name="Manage Job Listing" component={ManageJob} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Manage Job Listing"
+          component={ManageJob}
+          options={{ headerShown: false }}
+        />
 
         <Stack.Screen name="Language" component={Language} options={{ headerShown: false }} />
 
@@ -320,20 +351,44 @@ const StackNavigator = () => {
         <Stack.Screen name="PdfViewer" component={PdfViewer} options={{ headerShown: false }} />
 
         <Stack.Screen name="VideoViewer" component={VideoPlayer} options={{ headerShown: false }} />
-        
+
         <Stack.Screen name="setting" component={SettingsScreen} options={{ headerShown: false }} />
 
-        <Stack.Screen name="Allowance" component={AddWorkplaceHighlights} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Allowance"
+          component={AddWorkplaceHighlights}
+          options={{ headerShown: false }}
+        />
 
-        <Stack.Screen name="VisiblityOptions" component={VisiblityOptions} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="VisiblityOptions"
+          component={VisiblityOptions}
+          options={{ headerShown: false }}
+        />
 
-        <Stack.Screen name="ProfileVisitVisibility" component={ProfileVisitVisibility} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="ProfileVisitVisibility"
+          component={ProfileVisitVisibility}
+          options={{ headerShown: false }}
+        />
 
-        <Stack.Screen name="Visiblity" component={ProfileViewingSettings} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Visiblity"
+          component={ProfileViewingSettings}
+          options={{ headerShown: false }}
+        />
 
-        <Stack.Screen name="DiscoverByEmail" component={DiscoverByEmail} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="DiscoverByEmail"
+          component={DiscoverByEmail}
+          options={{ headerShown: false }}
+        />
 
-        <Stack.Screen name="DiscoverByPhone" component={DiscoverByPhone} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="DiscoverByPhone"
+          component={DiscoverByPhone}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

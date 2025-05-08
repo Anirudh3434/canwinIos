@@ -10,6 +10,7 @@ import {
   Image,
   ScrollView,
   StyleSheet,
+  BackHandler,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Colors } from '../../theme/color';
@@ -40,18 +41,34 @@ export default function ComHome() {
     navigation.navigate('Profile');
   };
 
+  const backAction = () => {
+    if (navigation.isFocused()) {
+      BackHandler.exitApp();
+      return true;
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
   useEffect(() => {
     const fetchData = async () => {
-      console.log('Fetching....')
+      console.log('Fetching....');
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
         console.log('Stored User ID:', storedUserId);
 
         if (storedUserId) {
-          const introRes = await axios.get(API_ENDPOINTS.INTRODUCTION + `?user_id=${+storedUserId}`);
+          const introRes = await axios.get(
+            API_ENDPOINTS.INTRODUCTION + `?user_id=${+storedUserId}`
+          );
           setName(introRes.data.data.full_name);
 
-          console.log('Job posting fetching....')
+          console.log('Job posting fetching....');
 
           const jobsRes = await axios.get(API_ENDPOINTS.FETCH_JOB_POSTING, {
             params: { user_id: +storedUserId, status: 'Active' },
@@ -67,7 +84,6 @@ export default function ComHome() {
 
     fetchData();
   }, []);
-
 
   console.log('Vacancies:', vacancies);
 
@@ -100,7 +116,9 @@ export default function ComHome() {
               </View>
             }
             trailing={
-              <View style={{ flexDirection: 'row', gap: 20, marginRight: 10, alignItems: 'center' }}>
+              <View
+                style={{ flexDirection: 'row', gap: 20, marginRight: 10, alignItems: 'center' }}
+              >
                 <Image
                   style={{ width: 25, height: 25, objectFit: 'contain' }}
                   source={require('../../../assets/image/notification.png')}
@@ -123,36 +141,41 @@ export default function ComHome() {
               <View style={{ padding: 20 }}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>My Vacancies</Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Application')} style={styles.link}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('Application')}
+                    style={styles.link}
+                  >
                     <Text style={styles.link}>See All</Text>
                   </TouchableOpacity>
                 </View>
 
                 {vacancies.length === 0 ? (
-  <View style={styles.fallbackContainer}>
-    <Text style={styles.fallbackTitle}>No Vacancies Yet</Text>
-    <Text style={styles.fallbackSubtitle}>Start posting jobs to attract the right talent.</Text>
-    <TouchableOpacity
-      onPress={() => navigation.navigate('AddJob')}
-      style={styles.postJobBtn}
-    >
-      <Ionicons name="add-circle-outline" size={16} color="#fff" />
-      <Text style={styles.postJobBtnText}>Post Your First Job</Text>
-    </TouchableOpacity>
-  </View>
-) : (
-  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-    {vacancies.map((item) => (
-      <JobCard
-        key={item.id}
-        job={item}
-        onSeeResume={() => {}}
-        onSeeDetails={() => {}}
-        home={true}
-      />
-    ))}
-  </ScrollView>
-)}
+                  <View style={styles.fallbackContainer}>
+                    <Text style={styles.fallbackTitle}>No Vacancies Yet</Text>
+                    <Text style={styles.fallbackSubtitle}>
+                      Start posting jobs to attract the right talent.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => navigation.navigate('AddJob')}
+                      style={styles.postJobBtn}
+                    >
+                      <Ionicons name="add-circle-outline" size={16} color="#fff" />
+                      <Text style={styles.postJobBtnText}>Post Your First Job</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {vacancies.map((item) => (
+                      <JobCard
+                        key={item.id}
+                        job={item}
+                        onSeeResume={() => {}}
+                        onSeeDetails={() => {}}
+                        home={true}
+                      />
+                    ))}
+                  </ScrollView>
+                )}
 
                 <View style={styles.resumeSection}>
                   <Text>Only 4 resume left Today!</Text>
@@ -269,48 +292,48 @@ const styles = StyleSheet.create({
   },
 
   fallbackContainer: {
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginTop: 20,
-  marginBottom: 30,
-  padding: 20,
-  borderWidth: 1,
-  borderColor: '#e0e0e0',
-  borderRadius: 20,
-  backgroundColor: '#f9f9f9',
-},
-fallbackImage: {
-  width: 80,
-  height: 80,
-  marginBottom: 10,
-  resizeMode: 'contain',
-  opacity: 0.7,
-},
-fallbackTitle: {
-  fontSize: 16,
-  fontFamily: 'Poppins-SemiBold',
-  color: '#333',
-  marginBottom: 5,
-},
-fallbackSubtitle: {
-  fontSize: 12,
-  fontFamily: 'Poppins-Regular',
-  color: '#888',
-  textAlign: 'center',
-  marginBottom: 10,
-},
-postJobBtn: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: Colors.primary,
-  paddingHorizontal: 15,
-  paddingVertical: 8,
-  borderRadius: 25,
-  gap: 6,
-},
-postJobBtnText: {
-  color: '#fff',
-  fontSize: 12,
-  fontFamily: 'Poppins-Medium',
-},
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 30,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 20,
+    backgroundColor: '#f9f9f9',
+  },
+  fallbackImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+    resizeMode: 'contain',
+    opacity: 0.7,
+  },
+  fallbackTitle: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  fallbackSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  postJobBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 25,
+    gap: 6,
+  },
+  postJobBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+  },
 });

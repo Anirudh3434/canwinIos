@@ -49,12 +49,11 @@ export default function ComHome() {
     { label: 'Schedule to Interview', value: 'schedule' },
   ]);
 
-
-  console.log(typeof interviewTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
-  console.log(interviewDate.toLocaleDateString())
+  console.log(typeof interviewTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  console.log(interviewDate.toLocaleDateString());
 
   return (
-    <SafeAreaView style={[styles.area, { backgroundColor: Colors.bg, paddingBottom: 40 }]}>
+    <SafeAreaView style={[styles.area, { backgroundColor: Colors.bg }]}>
       <StatusBar backgroundColor={Colors.bg} translucent={false} barStyle={'dark-content'} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={{ flex: 1 }}>

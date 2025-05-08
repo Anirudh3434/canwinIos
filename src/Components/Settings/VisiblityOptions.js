@@ -1,27 +1,20 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
 
 const VisiblityOptions = ({ navigation }) => {
   const menuItems = [
-    { id: 1, title:  'Profile viewing options' , route: 'Visiblity' },
-    { id: 2, title: 'Profile visit visibility' , route: 'ProfileVisitVisibility' },
-    { id: 3, title: 'Profile discovery using phone number' , route: 'DiscoverByPhone' },
-    { id: 4, title: 'Profile discovery using email address' , route: 'DiscoverByEmail' },
+    { id: 1, title: 'Profile viewing options', route: 'Visiblity' },
+    { id: 2, title: 'Profile visit visibility', route: 'ProfileVisitVisibility' },
+    { id: 3, title: 'Profile discovery using phone number', route: 'DiscoverByPhone' },
+    { id: 4, title: 'Profile discovery using email address', route: 'DiscoverByEmail' },
   ];
 
   const handleMenuPress = (item) => {
-   if(item.route) {
-    navigation.navigate(item.route);
-   }
+    if (item.route) {
+      navigation.navigate(item.route);
+    }
   };
 
   const handleBackPress = () => {
@@ -30,23 +23,21 @@ const VisiblityOptions = ({ navigation }) => {
   };
 
   const handleLogout = () => {
-
     console.log('Logging out...');
-    
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-           <Ionicons name="arrow-back" size={20} color="black" />
+          <Ionicons name="arrow-back" size={20} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Visibility of your profile & Network</Text>
       </View>
-      
+
       {/* Menu items */}
       <View style={styles.menuContainer}>
         {menuItems.map((item) => (
@@ -60,8 +51,6 @@ const VisiblityOptions = ({ navigation }) => {
           </TouchableOpacity>
         ))}
       </View>
-      
-    
     </SafeAreaView>
   );
 };
@@ -105,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
   },

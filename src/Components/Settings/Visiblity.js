@@ -7,7 +7,7 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -49,7 +49,7 @@ const ProfileViewingSettings = () => {
         },
       });
       setData(response.data.data);
-      
+
       const response2 = await axios.get(API_ENDPOINTS.DOCS, {
         params: {
           user_id: user_id,
@@ -61,6 +61,13 @@ const ProfileViewingSettings = () => {
     }
   };
 
+  const fetchVisiblity = async () => {
+    const response = await axios.get(API_ENDPOINTS.VISIBLE, { params: { user_id: user_id } });
+    console.log(response.data.data.visibility);
+    setSelectedOption(response.data.data.visibility);
+    console.log(selectedOption);
+  };
+
   useEffect(() => {
     fetchUserId();
   }, []);
@@ -68,9 +75,9 @@ const ProfileViewingSettings = () => {
   useEffect(() => {
     if (user_id) {
       fetchPersonalandDoc();
+      fetchVisiblity();
     }
   }, [user_id]);
-
 
   const saveVisibilitySetting = async (option) => {
     try {
@@ -96,7 +103,7 @@ const ProfileViewingSettings = () => {
           <ActivityIndicator size={50} color={Colors.primary} />
         </View>
       )}
-      
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -160,10 +167,12 @@ const ProfileViewingSettings = () => {
 
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
-              {selectedOption === 'Private' ? 'Anonymous Member' : data?.full_name || 'Henry Kanwil'}
+              {selectedOption === 'Private'
+                ? 'Anonymous Member'
+                : data?.full_name || 'Henry Kanwil'}
             </Text>
             <Text style={styles.profileInfoText}>
-                {data?.profile_headline || 'Software Engineer'}
+              {data?.profile_headline || 'Software Engineer'}
             </Text>
           </View>
         </View>
@@ -262,7 +271,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 9999,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)'
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   profileInfoText: {
     fontSize: 12,

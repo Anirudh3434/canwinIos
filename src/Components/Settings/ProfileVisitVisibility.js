@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  SafeAreaView,
+  StatusBar,
+} from 'react-native';
 import { Checkbox, Switch } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
@@ -12,7 +20,7 @@ const ProfileVisitVisibility = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -23,15 +31,15 @@ const ProfileVisitVisibility = () => {
 
       {/* Description */}
       <Text style={styles.description}>
-      Do you want to allow organizations to see that you visited their Profile?
+        Do you want to allow organizations to see that you visited their Profile?
       </Text>
 
       <View style={styles.switchContainer}>
-        <Text style={styles.optionTitle}>Allow organizations to see when you visit their profile</Text>
-        <Switch/>
+        <Text style={styles.optionTitle}>
+          Allow organizations to see when you visit their profile
+        </Text>
+        <Switch />
       </View>
-
-     
     </SafeAreaView>
   );
 };

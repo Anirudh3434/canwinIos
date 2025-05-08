@@ -25,7 +25,12 @@ export default function HomeSkeleton() {
                 <SkeletonPlaceholder.Item width={20} height={20} borderRadius={4} />
               </SkeletonPlaceholder>
               <SkeletonPlaceholder>
-                <SkeletonPlaceholder.Item width={280} height={40} borderRadius={20} marginLeft={20} />
+                <SkeletonPlaceholder.Item
+                  width={280}
+                  height={40}
+                  borderRadius={20}
+                  marginLeft={20}
+                />
               </SkeletonPlaceholder>
             </View>
           }
@@ -37,9 +42,16 @@ export default function HomeSkeleton() {
         />
 
         <View style={{ backgroundColor: Colors.bg, flex: 1, paddingBottom: 10 }}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 0 }}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 0 }}
+          >
             {/* User Cards Skeleton */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 20, paddingHorizontal: 15 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 20, paddingHorizontal: 15 }}
+            >
               {[1, 2, 3].map((_, index) => (
                 <View key={index} style={styles.card}>
                   <SkeletonPlaceholder>
@@ -47,8 +59,18 @@ export default function HomeSkeleton() {
                       <SkeletonPlaceholder.Item width={40} height={40} borderRadius={20} />
                       <SkeletonPlaceholder.Item marginLeft={20}>
                         <SkeletonPlaceholder.Item width={100} height={12} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={6} width={80} height={8} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={10} width={60} height={10} borderRadius={4} />
+                        <SkeletonPlaceholder.Item
+                          marginTop={6}
+                          width={80}
+                          height={8}
+                          borderRadius={4}
+                        />
+                        <SkeletonPlaceholder.Item
+                          marginTop={10}
+                          width={60}
+                          height={10}
+                          borderRadius={4}
+                        />
                       </SkeletonPlaceholder.Item>
                     </SkeletonPlaceholder.Item>
                   </SkeletonPlaceholder>
@@ -75,10 +97,16 @@ export default function HomeSkeleton() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginTop: 10,
-              }}>
+              }}
+            >
               <View style={[style.indicator]}></View>
               <View style={[style.indicator]}></View>
-              <View style={[style.indicator, { paddingHorizontal: 16, backgroundColor: Colors.primary }]}></View>
+              <View
+                style={[
+                  style.indicator,
+                  { paddingHorizontal: 16, backgroundColor: Colors.primary },
+                ]}
+              ></View>
             </View>
 
             {/* Recommended Jobs Skeleton */}
@@ -88,7 +116,11 @@ export default function HomeSkeleton() {
               </SkeletonPlaceholder.Item>
             </SkeletonPlaceholder>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingHorizontal: 10, marginTop: 10 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ paddingHorizontal: 10, marginTop: 10 }}
+            >
               {[1, 2, 3].map((_, index) => (
                 <View key={`recommended-${index}`} style={styles.jobCardContainer}>
                   <SkeletonPlaceholder>
@@ -96,14 +128,37 @@ export default function HomeSkeleton() {
                       <SkeletonPlaceholder.Item width={35} height={35} borderRadius={5} />
                       <SkeletonPlaceholder.Item marginTop={12}>
                         <SkeletonPlaceholder.Item width={150} height={16} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={6} width={100} height={12} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={12} flexDirection="row" alignItems="center">
+                        <SkeletonPlaceholder.Item
+                          marginTop={6}
+                          width={100}
+                          height={12}
+                          borderRadius={4}
+                        />
+                        <SkeletonPlaceholder.Item
+                          marginTop={12}
+                          flexDirection="row"
+                          alignItems="center"
+                        >
                           <SkeletonPlaceholder.Item width={12} height={12} borderRadius={6} />
-                          <SkeletonPlaceholder.Item marginLeft={5} width={80} height={10} borderRadius={4} />
+                          <SkeletonPlaceholder.Item
+                            marginLeft={5}
+                            width={80}
+                            height={10}
+                            borderRadius={4}
+                          />
                         </SkeletonPlaceholder.Item>
-                        <SkeletonPlaceholder.Item marginTop={8} flexDirection="row" alignItems="center">
+                        <SkeletonPlaceholder.Item
+                          marginTop={8}
+                          flexDirection="row"
+                          alignItems="center"
+                        >
                           <SkeletonPlaceholder.Item width={12} height={12} borderRadius={6} />
-                          <SkeletonPlaceholder.Item marginLeft={5} width={60} height={10} borderRadius={4} />
+                          <SkeletonPlaceholder.Item
+                            marginLeft={5}
+                            width={60}
+                            height={10}
+                            borderRadius={4}
+                          />
                         </SkeletonPlaceholder.Item>
                       </SkeletonPlaceholder.Item>
                     </SkeletonPlaceholder.Item>
@@ -119,9 +174,9 @@ export default function HomeSkeleton() {
               </SkeletonPlaceholder.Item>
             </SkeletonPlaceholder>
 
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
               style={{ paddingHorizontal: 10, marginTop: 10, paddingBottom: 20 }}
             >
               {[1, 2, 3].map((_, index) => (
@@ -131,14 +186,37 @@ export default function HomeSkeleton() {
                       <SkeletonPlaceholder.Item width={35} height={35} borderRadius={5} />
                       <SkeletonPlaceholder.Item marginTop={12}>
                         <SkeletonPlaceholder.Item width={150} height={16} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={6} width={100} height={12} borderRadius={4} />
-                        <SkeletonPlaceholder.Item marginTop={12} flexDirection="row" alignItems="center">
+                        <SkeletonPlaceholder.Item
+                          marginTop={6}
+                          width={100}
+                          height={12}
+                          borderRadius={4}
+                        />
+                        <SkeletonPlaceholder.Item
+                          marginTop={12}
+                          flexDirection="row"
+                          alignItems="center"
+                        >
                           <SkeletonPlaceholder.Item width={12} height={12} borderRadius={6} />
-                          <SkeletonPlaceholder.Item marginLeft={5} width={80} height={10} borderRadius={4} />
+                          <SkeletonPlaceholder.Item
+                            marginLeft={5}
+                            width={80}
+                            height={10}
+                            borderRadius={4}
+                          />
                         </SkeletonPlaceholder.Item>
-                        <SkeletonPlaceholder.Item marginTop={8} flexDirection="row" alignItems="center">
+                        <SkeletonPlaceholder.Item
+                          marginTop={8}
+                          flexDirection="row"
+                          alignItems="center"
+                        >
                           <SkeletonPlaceholder.Item width={12} height={12} borderRadius={6} />
-                          <SkeletonPlaceholder.Item marginLeft={5} width={60} height={10} borderRadius={4} />
+                          <SkeletonPlaceholder.Item
+                            marginLeft={5}
+                            width={60}
+                            height={10}
+                            borderRadius={4}
+                          />
                         </SkeletonPlaceholder.Item>
                       </SkeletonPlaceholder.Item>
                     </SkeletonPlaceholder.Item>
@@ -174,5 +252,5 @@ const styles = StyleSheet.create({
     padding: 5,
     marginBottom: 5,
     marginRight: 10,
-  }
+  },
 });

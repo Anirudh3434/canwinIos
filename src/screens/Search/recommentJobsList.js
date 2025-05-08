@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
+  BackHandler,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -23,17 +24,23 @@ import useRecentJobs from '../../hooks/Jobs/recentAddJobs';
 const SkeletonJobCard = () => (
   <View style={styles.card}>
     <SkeletonPlaceholder speed={800} highlightColor="#F2F8FC" flexDirection="column">
-      <SkeletonPlaceholder.Item width='100%' height={150} borderRadius={10} flexDirection='row-reverse' justifyContent='space-between'>
-        <SkeletonPlaceholder.Item width='70%' height={100} borderRadius={10}>
-          <SkeletonPlaceholder.Item width='80%' height={40} borderRadius={10} />
-          <SkeletonPlaceholder.Item width='25%' height={20} borderRadius={8} marginTop={5}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={10}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={5}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={5}/>
+      <SkeletonPlaceholder.Item
+        width="100%"
+        height={150}
+        borderRadius={10}
+        flexDirection="row-reverse"
+        justifyContent="space-between"
+      >
+        <SkeletonPlaceholder.Item width="70%" height={100} borderRadius={10}>
+          <SkeletonPlaceholder.Item width="80%" height={40} borderRadius={10} />
+          <SkeletonPlaceholder.Item width="25%" height={20} borderRadius={8} marginTop={5} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={10} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={5} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={5} />
         </SkeletonPlaceholder.Item>
 
-        <SkeletonPlaceholder.Item width='25%' height={100} borderRadius={10}> 
-          <SkeletonPlaceholder.Item width={70} height={70} borderRadius={50}/>
+        <SkeletonPlaceholder.Item width="25%" height={100} borderRadius={10}>
+          <SkeletonPlaceholder.Item width={70} height={70} borderRadius={50} />
         </SkeletonPlaceholder.Item>
       </SkeletonPlaceholder.Item>
     </SkeletonPlaceholder>
@@ -43,23 +50,31 @@ const SkeletonJobCard = () => (
 function RecommendedJobsList() {
   const route = useRoute();
   const navigation = useNavigation();
-  
+
   // Get jobType from params with fallback to 'recommendedJobs'
   const { jobType = 'recommendedJobs' } = route.params || {};
-  
-  const { 
-    recommendedJobs, 
-    recommendedLoading, 
-    recommendedError, 
-    refetch: refetchRecommendedJobs 
+
+  const backAction = () => {
+    if (navigation.isFocused()) {
+      navigation.navigate('MyTabs');
+      return true;
+    }
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [navigation]);
+
+  const {
+    recommendedJobs,
+    recommendedLoading,
+    recommendedError,
+    refetch: refetchRecommendedJobs,
   } = useRecommenedJob();
-  
-  const { 
-    recentJobs, 
-    recentLoading, 
-    recentError, 
-    refetch: refetchRecentJobs 
-  } = useRecentJobs();
+
+  const { recentJobs, recentLoading, recentError, refetch: refetchRecentJobs } = useRecentJobs();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
@@ -70,7 +85,7 @@ function RecommendedJobsList() {
   const isLoading = jobType === 'recommendedJobs' ? recommendedLoading : recentLoading;
   const hasError = jobType === 'recommendedJobs' ? recommendedError : recentError;
   const refetchJobs = jobType === 'recommendedJobs' ? refetchRecommendedJobs : refetchRecentJobs;
-  
+
   const handleSuccessPopup = () => {
     setSuccessPop(true);
     // Optional: Uncomment to auto-hide the popup after 3 seconds
@@ -89,11 +104,7 @@ function RecommendedJobsList() {
   };
 
   const renderJobCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => openJobDetail(item)}
-      activeOpacity={0.7}
-    >
+    <TouchableOpacity style={styles.card} onPress={() => openJobDetail(item)} activeOpacity={0.7}>
       <View style={styles.jobDetails}>
         <Text style={styles.cardTitle}>{item.job_title}</Text>
         <Text style={styles.cardText}>{item.company_name}</Text>
@@ -103,21 +114,29 @@ function RecommendedJobsList() {
         </View>
         <View style={styles.detailRow}>
           <Ionicons name="briefcase-outline" size={14} color="gray" />
-          <Text style={styles.detailText}>{item.min_experience}-{item.max_experience} years </Text>
+          <Text style={styles.detailText}>
+            {item.min_experience}-{item.max_experience} years{' '}
+          </Text>
         </View>
 
         <View style={[styles.detailRow, { marginTop: 10 }]}>
-          <Text style={[styles.detailText, { fontFamily: 'Poppins-Regular', fontSize: 10 , color: Colors.disable}]}>{item.daysAgo}</Text>
+          <Text
+            style={[
+              styles.detailText,
+              { fontFamily: 'Poppins-Regular', fontSize: 10, color: Colors.disable },
+            ]}
+          >
+            {item.daysAgo}
+          </Text>
         </View>
       </View>
 
       <View style={styles.ratingContainer}>
         <Image
-          source={require('../../../assets/image/a1.png')}
+          source={{ uri: item.company_logo }}
           style={styles.jobImage}
           resizeMode="contain"
         />
-        
       </View>
     </TouchableOpacity>
   );
@@ -144,10 +163,7 @@ function RecommendedJobsList() {
     <View style={styles.errorContainer}>
       <Ionicons name="alert-circle-outline" size={50} color="#D32F2F" />
       <Text style={styles.errorText}>Failed to load jobs</Text>
-      <TouchableOpacity 
-        style={styles.retryButton} 
-        onPress={refetchJobs}
-      >
+      <TouchableOpacity style={styles.retryButton} onPress={refetchJobs}>
         <Text style={styles.retryButtonText}>Retry</Text>
       </TouchableOpacity>
     </View>
@@ -159,7 +175,7 @@ function RecommendedJobsList() {
         barStyle={modalVisible ? 'light-content' : 'dark-content'}
         backgroundColor={modalVisible ? 'rgba(0, 0, 0, 0.5)' : 'white'}
       />
-      
+
       {successPop && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -177,7 +193,7 @@ function RecommendedJobsList() {
           </View>
         </View>
       )}
-      
+
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.navigate('MyTabs')}
@@ -241,7 +257,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row-reverse',
-    gap: 30, 
+    gap: 30,
     borderRadius: 5,
     padding: 15,
     marginVertical: 8,
@@ -265,7 +281,6 @@ const styles = StyleSheet.create({
     color: 'black',
   },
   ratingContainer: {
-
     flexDirection: 'column',
     alignItems: 'center',
     marginTop: 10,
@@ -282,8 +297,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
   },
   jobImage: {
-    width: 35,
-    height: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    objectFit: 'contain'
   },
   jobDetails: {
     flex: 1,

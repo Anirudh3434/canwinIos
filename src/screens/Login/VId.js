@@ -7,16 +7,12 @@
 import {
   View,
   Text,
-  FlatList,
   SafeAreaView,
-  Dimensions,
   StatusBar,
   KeyboardAvoidingView,
-  ImageBackground,
   TouchableOpacity,
-  Image,
   ScrollView,
-  TextInput,
+  Alert,
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -28,18 +24,21 @@ import axios from 'axios';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 
 export default function VId() {
-  const [data, setData] = useState();
+  const [userData, setUserData] = useState(null);
+  const [selectedOption, setSelectedOption] = useState(null); // Initialize to null
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchBasicDetail = async () => {
       try {
-        const user_id = await AsyncStorage.getItem('userId');
-        if (user_id) {
-          console.log('User ID:', user_id);
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          console.log('User ID:', userId);
           const response = await axios.get(API_ENDPOINTS.BASIC_DETAILS, {
-            params: { user_id },
+            params: { user_id: userId },
           });
-          setData(response.data);
+          setUserData(response.data);
         }
       } catch (error) {
         console.error('Error fetching user details:', error);
@@ -49,9 +48,22 @@ export default function VId() {
     fetchBasicDetail();
   }, []);
 
-  const navigation = useNavigation();
+  const handleContinue = () => {
+    if (!selectedOption) {
+      Alert.alert('Please select an option to continue');
+      return;
+    }
 
-  const [selectedOption, setSelectedOption] = useState('email'); // Default to email
+    if (userData) {
+      if (selectedOption === 'email') {
+        navigation.navigate('Email', { data: userData });
+      } else if (selectedOption === 'phone') {
+        navigation.navigate('Phone', { data: userData });
+      }
+    } else {
+      Alert.alert('Error', 'User data not loaded yet. Please try again.');
+    }
+  };
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
@@ -76,6 +88,7 @@ export default function VId() {
               Your identity helps you discover new people and opportunities
             </Text>
 
+            {/* Email Verification Option (Commented out as per original code) */}
             {/* <TouchableOpacity
               onPress={() => setSelectedOption('email')}
               style={[
@@ -141,13 +154,8 @@ export default function VId() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => {
-                if (selectedOption === 'email') {
-                  navigation.navigate('Email', { data: data });
-                } else {
-                  navigation.navigate('Phone', { data: data });
-                }
-              }}
+              disabled={!selectedOption}
+              onPress={handleContinue}
               style={[style.btn, { marginTop: 50, marginBottom: 20 }]}
             >
               <Text style={[style.btntxt, { marginBottom: -8 }]}>CONTINUE</Text>

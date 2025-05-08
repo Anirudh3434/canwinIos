@@ -29,17 +29,16 @@ const useRecommenedJob = () => {
         return;
       }
 
-   
-
       // ✅ Only fetch jobs if skills are available
-      const jobRes = await axios.get(API_ENDPOINTS.RECOMMEND_JOBS, { params: { skills: skillString } });
-      
+      const jobRes = await axios.get(API_ENDPOINTS.RECOMMEND_JOBS, {
+        params: { skills: skillString },
+      });
 
       setRecommendedJobs(jobRes.data.data.data);
 
       const today = new Date();
 
-      const filteredJobs = jobRes.data.data.map(job => {
+      const filteredJobs = jobRes.data.data.map((job) => {
         const [day, month, year] = job.created_at.split('-');
         const jobDate = new Date(`${year}-${month}-${day}`);
         const timeDiff = today - jobDate;

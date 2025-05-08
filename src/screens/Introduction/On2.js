@@ -47,50 +47,50 @@ export default function On2() {
     fetchUserId();
   }, []);
 
-const handleSubmit = async () => {
-  if (!prefered_job_role) {
-    alert('Please select a job role.');
-    return;
-  }
-
-  const data = {
-    userId: userid,
-    prefered_job_role: prefered_job_role,
-  };
-
-  try {
-    const response = await axios.post(API_ENDPOINTS.CAREER, data);
-    console.log(response.data);
-
-    if (response.data.status === 'success') {
-      try {
-        // Fix: Pass user_id as query param
-        const getStepResponse = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userid}`);
-
-        if (getStepResponse.data.status === 'success') {
-          const currentStep = getStepResponse.data.data.steps;
-          setStep(currentStep);
-
-          // Post new step
-          const stepResponse = await axios.post(API_ENDPOINTS.STEP, {
-            user_id: userid,
-            role_id: roleId,
-            steps: currentStep + 1,
-          });
-
-          console.log(stepResponse.data);
-          if (stepResponse.data.status === 'success') {
-            navigation.navigate('Validate');
-          }
-        }
-      } catch (error) {
-        console.log('Step update error:', error);
-      }
+  const handleSubmit = async () => {
+    if (!prefered_job_role) {
+      alert('Please select a job role.');
+      return;
     }
-  } catch (error) {
-    console.log('Career post error:', error);
-  }
-};
+
+    const data = {
+      userId: userid,
+      prefered_job_role: prefered_job_role,
+    };
+
+    try {
+      const response = await axios.post(API_ENDPOINTS.CAREER, data);
+      console.log(response.data);
+
+      if (response.data.status === 'success') {
+        try {
+          // Fix: Pass user_id as query param
+          const getStepResponse = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userid}`);
+
+          if (getStepResponse.data.status === 'success') {
+            const currentStep = getStepResponse.data.data.steps;
+            setStep(currentStep);
+
+            // Post new step
+            const stepResponse = await axios.post(API_ENDPOINTS.STEP, {
+              user_id: userid,
+              role_id: roleId,
+              steps: currentStep + 1,
+            });
+
+            console.log(stepResponse.data);
+            if (stepResponse.data.status === 'success') {
+              navigation.navigate('Validate');
+            }
+          }
+        } catch (error) {
+          console.log('Step update error:', error);
+        }
+      }
+    } catch (error) {
+      console.log('Career post error:', error);
+    }
+  };
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
@@ -101,7 +101,9 @@ const handleSubmit = async () => {
       >
         <ScrollView style={{ flex: 1 }}>
           <View style={[style.main, { backgroundColor: Colors.bg }]}>
-            <Text style={[style.s22, { color: Colors.txt, marginTop: Platform.OS === 'ios' ? 10 : 30 }]}>
+            <Text
+              style={[style.s22, { color: Colors.txt, marginTop: Platform.OS === 'ios' ? 10 : 30 }]}
+            >
               What type of Job are you looking for?
             </Text>
 
@@ -125,7 +127,11 @@ const handleSubmit = async () => {
                     },
                   ]}
                 >
-                  <Image source={item.icon} resizeMode="stretch" style={{ height: 30, width: 30 }} />
+                  <Image
+                    source={item.icon}
+                    resizeMode="stretch"
+                    style={{ height: 30, width: 30 }}
+                  />
                   <Text style={[style.r15, { color: Colors.txt1, marginLeft: 10, flex: 1 }]}>
                     {item.title}
                   </Text>

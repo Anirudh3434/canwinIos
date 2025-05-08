@@ -54,6 +54,8 @@ export default function ComProfile() {
 
       setProfileImage(blob);
       uploadDocument(blob, 'CL');
+      
+
     })
     .catch((error) => {
       console.log('ImagePicker Error: ', error);
@@ -73,12 +75,37 @@ export default function ComProfile() {
 
     try {
       const response = await axios.post(API_ENDPOINTS.DOCS, payload);
-      console.log('Response:', response.data);
+      console.log('Response:', response.data.company_logo);
+      UpdateCompanylogo(response?.data?.company_logo);
+      
       navigation.navigate('MyTabs');
     } catch (error) {
       console.error('Upload failed:', error);
     }
   };
+
+
+
+  const UpdateCompanylogo = async (logo) => {
+    const payload ={
+      company_id: +data?.data?.company_id,
+      company_logo: logo,
+    }
+
+    console.log('Payload:', payload);
+
+    try {
+      const response = await axios.post(API_ENDPOINTS.COMPANY_DETAILS, payload);
+      console.log('Response:', response.data);
+    }
+    catch (error) {
+      console.error('Update failed:', error);
+    }
+   
+  }
+    
+
+
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -100,6 +127,7 @@ export default function ComProfile() {
       const response = await axios.get(API_ENDPOINTS.COMPANY_DETAILS, {
         params: { user_id: userId },
       });
+      console.log('response' ,response.data)
       setData(response.data);
     } catch (error) {
       console.error('Failed to retrieve company details:', error);
@@ -513,7 +541,7 @@ export default function ComProfile() {
       </View>
     ))
 ) : (
-  <Text style={styles.benefitText}>No Allowances Added</Text>
+  <Text style={[style.r14, { color: '#666' }]}>No Allowances Added</Text>
 )}
             </View>
 
@@ -584,10 +612,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E5EA',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   header: {
     flexDirection: 'row',

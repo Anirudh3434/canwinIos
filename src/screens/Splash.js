@@ -22,7 +22,7 @@ export default function Splash() {
             height: height / 3.5,
             resizeMode: 'stretch',
             alignSelf: 'center',
-            marginLeft: 10
+            marginLeft: 10,
           }}
         />
         <Text style={[style.apptitle, { textAlign: 'center', color: Colors.active }]}>

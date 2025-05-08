@@ -3,7 +3,7 @@ require_relative '../node_modules/react-native/scripts/react_native_pods'
 platform :ios, '15.2'  # Minimum iOS deployment target
 
 use_modular_headers!  # Globally enable modular headers
-use_frameworks! :linkage => :dynamic
+use_frameworks! :linkage => :static
 
 prepare_react_native_project!
 
@@ -24,7 +24,7 @@ target 'Jobile' do
 
  use_react_native!(
   :path => config[:reactNativePath],
-  :hermes_enabled => false,
+  :hermes_enabled => true,
   :fabric_enabled => false,
   :app_path => "#{Pod::Config.instance.installation_root}/.."
 )

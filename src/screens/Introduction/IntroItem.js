@@ -9,19 +9,25 @@ import {
   StyleSheet,
   Platform,
   Animated,
-} from "react-native"
-import { Colors } from "../../theme/color"
-import { useNavigation } from "@react-navigation/native"
+} from 'react-native';
+import { Colors } from '../../theme/color';
+import { useNavigation } from '@react-navigation/native';
 
-const { width, height } = Dimensions.get("screen")
+const { width, height } = Dimensions.get('screen');
 
-export default function IntroItem({ item, largeCircleSize, smallCircleSize, largeCircleZIndex, smallCircleZIndex }) {
-  const navigation = useNavigation()
+export default function IntroItem({
+  item,
+  largeCircleSize,
+  smallCircleSize,
+  largeCircleZIndex,
+  smallCircleZIndex,
+}) {
+  const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: "#F5FBF6" }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F5FBF6' }]}>
       <StatusBar backgroundColor="#F5FBF6" translucent={true} barStyle="dark-content" />
-      <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate("On1")}>
+      <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('On1')}>
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
       <View style={styles.imageContainer}>
@@ -54,7 +60,7 @@ export default function IntroItem({ item, largeCircleSize, smallCircleSize, larg
         <Text style={styles.subtitle}>{item.subtitle}</Text>
       </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -64,8 +70,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg,
   },
   skipButton: {
-    position: "absolute",
-    top: Platform.OS === "android" ? StatusBar.currentHeight + 10 : 10,
+    position: 'absolute',
+    top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 10,
     right: 20,
     zIndex: 10,
   },
@@ -74,54 +80,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   imageContainer: {
-    height: "100%",
+    height: '100%',
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    marginBottom: 100
   },
   largeCircle: {
-    backgroundColor: "#F5FBF6",
-    position: "absolute",
+    backgroundColor: '#F5FBF6',
+    position: 'absolute',
     marginBottom: 10,
   },
   smallCircle: {
-    backgroundColor: "#D9F2EC",
-    position: "absolute",
+    backgroundColor: '#D9F2EC',
+    position: 'absolute',
   },
   image: {
-    width: width / 1.5,
+    width: width / 1.6,
     height: height / 3,
-    resizeMode: "contain",
+    resizeMode: 'contain',
     zIndex: 3,
   },
   textContainer: {
-    position: "absolute",
+    position: 'absolute',
     bottom: -10,
     height: 250,
-    backgroundColor: "white",
-    width: "100%",
+    backgroundColor: 'white',
+    width: '100%',
     paddingHorizontal: 15,
     flex: 0.4,
-    justifyContent: "center",
+    justifyContent: 'center',
     borderTopRightRadius: 60,
     borderTopLeftRadius: 60,
     marginBottom: 10,
+    paddingHorizontal: 30
   },
   title: {
     width: 300,
     fontSize: 40,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     color: Colors.active,
-    textAlign: "left",
-    fontFamily: "Poppins-Bold",
+    textAlign: 'left',
+    fontFamily: 'Poppins-Bold',
   },
   subtitle: {
     width: 300,
-    textAlign: "left",
+    textAlign: 'left',
     fontSize: 14,
-    fontFamily: "Poppins-Regular",
-    color: "#000000",
+    fontFamily: 'Poppins-Regular',
+    color: '#000000',
     marginTop: 15,
   },
-})
+});

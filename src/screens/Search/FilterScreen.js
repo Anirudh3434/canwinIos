@@ -36,7 +36,15 @@ function FilterScreen({ data, SearchFilterData, filterVisible, index }) {
     { name: 'Salary', Option: ['0-3 LPA', '3-6 LPA', '6-10 LPA', '10+ LPA'] },
     {
       name: 'Industries',
-      Option: ['IT & Software', 'Healthcare', 'Finance', 'Education', 'Manufacturing', 'Marketing', 'Technology'],
+      Option: [
+        'IT & Software',
+        'Healthcare',
+        'Finance',
+        'Education',
+        'Manufacturing',
+        'Marketing',
+        'Technology',
+      ],
     },
     { name: 'Work Type', Option: ['Full-Time', 'Part-Time', 'Contract', 'Internship'] },
     {
@@ -57,13 +65,15 @@ function FilterScreen({ data, SearchFilterData, filterVisible, index }) {
     { name: 'Stipend', Option: ['Unpaid', '0-5K per month', '5K-10K per month', '10K+ per month'] },
     {
       name: 'Education',
-      Option: ['Higher Secondary', 'Diploma', "Doctorate", "Post Graduate", 'Graduate'],
+      Option: ['Higher Secondary', 'Diploma', 'Doctorate', 'Post Graduate', 'Graduate'],
     },
     { name: 'Posted By', Option: ['Company', 'Consultant'] },
   ];
 
   // Initialize with the heading at the provided index
-  const [selectedHeading, setSelectedHeading] = useState(FilterHeadings[index] || FilterHeadings[0]);
+  const [selectedHeading, setSelectedHeading] = useState(
+    FilterHeadings[index] || FilterHeadings[0]
+  );
   // Use state to store filter data with previous selections
   const [filterData, setFilterData] = useState(data || {});
   // Store a backup of original data to compare changes
@@ -141,9 +151,11 @@ function FilterScreen({ data, SearchFilterData, filterVisible, index }) {
                     {item}
                   </Text>
                   {/* Show indicator if this heading has selected filters */}
-                  {filterData[item] && filterData[item].length > 0 && (
-                    <View style={styles.selectedIndicator} />
-                  )}
+                  {filterData[item] && filterData[item].length > 0 ? (
+  <View style={styles.selectedIndicator} />
+) : (
+  <View style={{ width: 8, height: 8 , marginRight: 10 }} />
+)}
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -224,7 +236,7 @@ const styles = StyleSheet.create({
   },
   headingButton: {
     paddingVertical: 10,
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
@@ -242,7 +254,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: Colors.primary,
-    marginLeft: 5,
+    marginRight: 10,
   },
   optionButton: {
     paddingVertical: 10,
@@ -257,11 +269,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   buttonContainer: {
+    width: '100%',
     alignItems: 'center',
     paddingBottom: 20,
   },
   applyButton: {
-    width: 300,
+    width: '90%',
     padding: 12,
     borderRadius: 5,
     backgroundColor: Colors.primary,
@@ -285,7 +298,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
   },
   cancelButton: {
-    width: 300,
+    width: '90%',
     padding: 12,
     borderRadius: 5,
     borderWidth: 1,

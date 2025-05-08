@@ -20,7 +20,7 @@ const width = Dimensions.get('screen').width;
 const height = Dimensions.get('screen').height;
 export default function On1() {
   const navigation = useNavigation();
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
       <StatusBar backgroundColor="transparent" translucent={true} barStyle={'dark-content'} />
@@ -60,7 +60,10 @@ export default function On1() {
             </View>
             <View style={{ padding: 5, marginTop: 20 }}>
               <TouchableOpacity
-                onPress={() => {navigation.navigate('Signup', { userType: 'Job Seeker' }) ; dispatch(setRole('Job Seeker'))}}
+                onPress={() => {
+                  navigation.navigate('Signup', { userType: 'Job Seeker' });
+                  dispatch(setRole('Job Seeker'));
+                }}
                 style={[style.signupBox, { borderRadius: 10 }]}
               >
                 <Image
@@ -79,7 +82,10 @@ export default function On1() {
 
             <View style={{ padding: 5, marginTop: 15, marginBottom: 20 }}>
               <TouchableOpacity
-                onPress={() => {navigation.navigate('Signup', { userType: 'Company' }) ; dispatch(setRole('Company'))}}
+                onPress={() => {
+                  navigation.navigate('Signup', { userType: 'Company' });
+                  dispatch(setRole('Company'));
+                }}
                 style={[style.signupBox, { borderRadius: 10 }]}
               >
                 <Image

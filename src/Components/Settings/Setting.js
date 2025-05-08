@@ -1,12 +1,5 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  StatusBar,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
 import { useDispatch } from 'react-redux';
@@ -18,13 +11,13 @@ const SettingsScreen = ({ navigation }) => {
     { id: 1, title: 'Communication & Privacy' },
     { id: 2, title: 'Account' },
     { id: 3, title: 'Career Preferences' },
-    { id: 4, title: 'Visibility' , route: 'VisiblityOptions' },
+    { id: 4, title: 'Visibility', route: 'VisiblityOptions' },
   ];
 
   const handleMenuPress = (item) => {
-   if(item.route) {
-    navigation.navigate(item.route);
-   }
+    if (item.route) {
+      navigation.navigate(item.route);
+    }
   };
 
   const handleBackPress = () => {
@@ -42,15 +35,15 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Header with back button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-           <Ionicons name="arrow-back" size={20} color="black" />
+          <Ionicons name="arrow-back" size={20} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
-      
+
       {/* Menu items */}
       <View style={styles.menuContainer}>
         {menuItems.map((item) => (
@@ -64,21 +57,21 @@ const SettingsScreen = ({ navigation }) => {
           </TouchableOpacity>
         ))}
       </View>
-      
+
       {/* Logout button */}
       <View style={styles.logoutContainer}>
         <TouchableOpacity
-        onPress={async () => {
-              try {
-        
-                await AsyncStorage.removeItem('userId');
-                await AsyncStorage.removeItem('lastTab');
-                navigation.navigate('Login');
-              } catch (error) {
-                console.error('Error during logout:', error);
-              }
-            }}
-        style={styles.logoutButton}>
+          onPress={async () => {
+            try {
+              await AsyncStorage.removeItem('userId');
+              await AsyncStorage.removeItem('lastTab');
+              navigation.navigate('Login');
+            } catch (error) {
+              console.error('Error during logout:', error);
+            }
+          }}
+          style={styles.logoutButton}
+        >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -125,7 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5},
+    shadowOffset: { width: 0, height: 5 },
     shadowOpacity: 0.4,
     shadowRadius: 5,
   },

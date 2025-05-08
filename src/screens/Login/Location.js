@@ -6,9 +6,13 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
+  PermissionsAndroid,
+  Platform,
   Image,
   ActivityIndicator,
   Alert,
+  Dimensions,
+  BackHandler,
 } from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import { useNavigation } from '@react-navigation/native';
@@ -16,7 +20,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 
-const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY'; // 🔥 Add your API Key here
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB0za9KmGAwFEMFzQnkNezm2xW4rHPEczU'; // Your API Key
+
+const { height, width } = Dimensions.get('window');
 
 const LocationSelection = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -49,41 +55,137 @@ const LocationSelection = () => {
     fetchUserId();
   }, []);
 
-  console.log('userid', userid);
-  console.log('roleId', roleId);
+  useEffect(() => {
+    const backAction = () => {
+      // Your custom back button logic
+      return true; // Prevent default behavior
+    };
 
-  const fetchLocation = () => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove(); // Clean up on unmount
+  }, []);
+
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'ios') {
+      // iOS permission handling is done by the Geolocation service itself
+      return true;
+    }
+
+    try {
+      // For Android 12+ (API 31+), you might need both permissions
+      if (Platform.Version >= 31) {
+        const fineLocationGranted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Precise Location Permission',
+            message:
+              'We need access to your precise location to show relevant information near you.',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          }
+        );
+
+        const backgroundLocationGranted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
+          {
+            title: 'Background Location Permission',
+            message:
+              'We need access to your location in the background to provide continuous service.',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          }
+        );
+
+        return fineLocationGranted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      // For Android 10+ (API 29+)
+      else if (Platform.Version >= 29) {
+        const fineLocationGranted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'We need access to your location to show relevant information near you.',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          }
+        );
+
+        return fineLocationGranted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      // For Android 9 and below
+      else {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'We need access to your location to show relevant information near you.',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          }
+        );
+
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+    } catch (err) {
+      console.warn('Error requesting location permission:', err);
+      return false;
+    }
+  };
+
+  const fetchLocation = async () => {
+    const hasPermission = await requestLocationPermission();
+
+    if (!hasPermission) {
+      Alert.alert('Permission Denied', 'Location permission not granted');
+      return;
+    }
+
     setLoading(true);
 
     Geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-
         console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
 
-        // Reverse Geocode to get city name
         const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
 
         try {
           const response = await fetch(url);
           const data = await response.json();
-          if (data.status === 'OK') {
-            const address = data.results[0].formatted_address;
+
+          if (data.status === 'OK' && data.results.length > 0) {
+            // Extract city name or locality from the address components
+            let cityName = null;
+            const addressComponents = data.results[0].address_components;
+
+            for (const component of addressComponents) {
+              if (
+                component.types.includes('locality') ||
+                component.types.includes('administrative_area_level_2') ||
+                component.types.includes('administrative_area_level_1')
+              ) {
+                cityName = component.long_name;
+                break;
+              }
+            }
+
+            const address = cityName || data.results[0].formatted_address;
             setCurrentLocation(address);
             setSelectedLocation(address);
           } else {
             Alert.alert('Failed to get location', 'Try again later');
           }
         } catch (error) {
+          console.error('Error fetching location details:', error);
           Alert.alert('Error', 'Failed to fetch location');
-          console.error(error);
         } finally {
           setLoading(false);
         }
       },
       (error) => {
-        console.error(error);
-        Alert.alert('Error', 'Failed to get location. Please enable GPS.');
+        console.error('Geolocation error:', error);
+        Alert.alert('Error', 'Failed to get location. Please ensure GPS is enabled.');
         setLoading(false);
       },
       {
@@ -160,7 +262,9 @@ const LocationSelection = () => {
           {loading ? (
             <ActivityIndicator size="small" color="#14B6AA" />
           ) : (
-            <Text>{currentLocation ? currentLocation : 'Select Current Location'}</Text>
+            <Text style={styles.locationText}>
+              {currentLocation ? currentLocation : 'Select Current Location'}
+            </Text>
           )}
         </TouchableOpacity>
 
@@ -186,10 +290,7 @@ const LocationSelection = () => {
           ))}
         </View>
 
-        <TouchableOpacity
-          style={styles.proceedButton}
-          onPress={handleSubmit}
-        >
+        <TouchableOpacity style={styles.proceedButton} onPress={handleSubmit}>
           <Text style={styles.proceedButtonText}>Proceed</Text>
         </TouchableOpacity>
       </View>
@@ -204,41 +305,45 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: 20,
-    marginTop: 100,
+    padding: width * 0.05, // 5% of screen width
+    marginTop: height * 0.1, // 10% of screen height
   },
   title: {
-    fontSize: 30,
+    fontSize: width * 0.08, // 8% of screen width
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
     textAlign: 'center',
   },
   locationButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
-    height: 60,
+    gap: width * 0.05,
+    height: height * 0.08, // 8% of screen height
     backgroundColor: '#F9F9F9',
-    padding: 15,
+    padding: width * 0.04,
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: height * 0.02,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: width * 0.04,
+    textAlign: 'center',
   },
   locationList: {
-    display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 15,
-    marginTop: 20,
+    gap: height * 0.02,
+    marginTop: height * 0.02,
   },
   jobButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: width * 0.04,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: height * 0.015,
     width: '100%',
   },
   selectedJobButton: {
@@ -246,19 +351,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#14B6AA0A',
   },
   jobTitle: {
-    fontSize: 16,
+    fontSize: width * 0.045, // 4.5% of screen width
     flex: 1,
   },
   proceedButton: {
     backgroundColor: '#14B6AA',
-    padding: 15,
+    padding: width * 0.04,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: height * 0.03,
   },
   proceedButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: width * 0.05,
     fontWeight: 'bold',
   },
 });

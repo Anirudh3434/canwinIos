@@ -17,7 +17,7 @@ const useSearchFetchJobs = (input) => {
 
       const today = new Date();
 
-      const jobsWithDaysAgo = jobData.map(job => {
+      const jobsWithDaysAgo = jobData.map((job) => {
         const [day, month, year] = job.created_at.split('-');
         const jobDate = new Date(`${year}-${month}-${day}`);
         const timeDiff = today - jobDate;
@@ -29,14 +29,14 @@ const useSearchFetchJobs = (input) => {
         };
       });
 
-      const filteredJobs = jobsWithDaysAgo.filter(job => {
+      const filteredJobs = jobsWithDaysAgo.filter((job) => {
         const matchesSearch =
           job.company_name.toLowerCase().includes(input.input.toLowerCase()) ||
           job.job_title.toLowerCase().includes(input.input.toLowerCase()) ||
           job.department.toLowerCase().includes(input.input.toLowerCase()) ||
           job.job_skills
             .split(',')
-            .map(skill => skill.trim().toLowerCase())
+            .map((skill) => skill.trim().toLowerCase())
             .includes(input.input.toLowerCase());
 
         return matchesSearch;

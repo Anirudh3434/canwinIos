@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Jobile</string>
+	<string>Canwinn</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -82,5 +82,33 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+
+	<!-- Merged CFBundleURLTypes -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.576594960088-5mdm8rmdg5askfqbav9fpekcmq8qvs5k</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>myapp</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.jobile</string>
+		</dict>
+	</array>
+
+	<!-- Correct placement of LSApplicationQueriesSchemes -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>myapp</string>
+	</array>
+
 </dict>
 </plist>

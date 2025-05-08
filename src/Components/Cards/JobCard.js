@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Pressable, StyleSheet, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  Pressable,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color';
 import axios from 'axios';
@@ -8,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu , home}) => {
+const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
 
@@ -19,7 +27,7 @@ const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu , home}) => {
     } else if (job?.salary_range) {
       return job.salary_range;
     } else {
-      return "Not specified";
+      return 'Not specified';
     }
   };
 
@@ -27,45 +35,50 @@ const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu , home}) => {
   const getStatusStyles = () => {
     const status = job?.STATUS || job?.status || 'Inactive';
     const isActive = status === 'Active';
-    
+
     return {
       containerStyle: {
-        backgroundColor: isActive ? '#E4FFFD' : '#FFEFEF'
+        backgroundColor: isActive ? '#E4FFFD' : '#FFEFEF',
       },
       textStyle: {
-        color: isActive ? Colors.primary : '#DC1F1F'
+        color: isActive ? Colors.primary : '#DC1F1F',
       },
-      text: isActive ? 'Active' : 'Inactive'
+      text: isActive ? 'Active' : 'Inactive',
     };
   };
 
   const statusStyles = getStatusStyles();
-  
+
   return (
     <View style={styles.cardContainer}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View style={styles.cardHeader}>
-          <Image style={styles.jobLogo} source={require('../../../assets/image/s17.png')} />
+          <Image style={styles.jobLogo} source={{uri : job?.company_logo}} />
           <View>
             <Text style={styles.jobTitle} numberOfLines={2} ellipsizeMode="tail">
-              {job?.job_title?.length > 20 
-                ? job.job_title.slice(0, 20) + '...' 
+              {job?.job_title?.length > 20
+                ? job.job_title.slice(0, 20) + '...'
                 : job?.job_title || job?.title || 'Job Title'}
             </Text>
-            <Text style={styles.jobLocation}>{job.JOB_LOCATION || job.location || 'Location not specified'}</Text>
+            <Text style={styles.jobLocation}>
+              {job.JOB_LOCATION || job.location || 'Location not specified'}
+            </Text>
             <Text style={styles.jobDate}>Posted: {job.created_at || 'Recently'}</Text>
           </View>
         </View>
         <View style={styles.cardFooter}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
             <View style={[styles.statusContainer, statusStyles.containerStyle]}>
-              <Text style={[styles.statusText, statusStyles.textStyle]}>
-                {statusStyles.text}
-              </Text>
+              <Text style={[styles.statusText, statusStyles.textStyle]}>{statusStyles.text}</Text>
             </View>
-        {!home &&    <TouchableOpacity style={{ padding: 5}} onPress={() => onMenu && onMenu(!menuVisible)}>
-              <Ionicons name="ellipsis-vertical" size={16} color={Colors.primary} />
-            </TouchableOpacity>}
+            {!home && (
+              <TouchableOpacity
+                style={{ padding: 5 }}
+                onPress={() => onMenu && onMenu(!menuVisible)}
+              >
+                <Ionicons name="ellipsis-vertical" size={16} color={Colors.primary} />
+              </TouchableOpacity>
+            )}
           </View>
           <Text style={styles.salaryText}>{formatSalary()}</Text>
         </View>
@@ -84,7 +97,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     backgroundColor: '#fff',
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,

@@ -11,13 +11,13 @@ const useFetchJobs = () => {
     setLoading(true);
     try {
       const response = await axios.get(API_ENDPOINTS.JOBS);
-      const jobData = response?.data?.data ;
-    
-      console.log( ' response', response)
+      const jobData = response?.data?.data;
+
+      console.log(' response', response);
 
       const today = new Date();
 
-      const jobsWithDaysAgo = jobData.map(job => {
+      const jobsWithDaysAgo = jobData.map((job) => {
         const [day, month, year] = job.created_at.split('-');
         const jobDate = new Date(`${year}-${month}-${day}`);
 
@@ -26,8 +26,7 @@ const useFetchJobs = () => {
 
         return {
           ...job,
-          daysAgo:
-            daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`,
+          daysAgo: daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`,
         };
       });
 

@@ -9,8 +9,10 @@ import {
   ScrollView,
   TextInput,
   Alert,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import style from '../../theme/style';
 import { Colors } from '../../theme/color';
@@ -26,16 +28,33 @@ export default function Forgot() {
   const [email, setEmail] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
+    } else if (interval) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleForgotPassword = async () => {
+    if (loading || timer > 0) return;
+
     setLoading(true);
     try {
       await auth().sendPasswordResetEmail(email);
       Alert.alert('Password Reset', 'A password reset link has been sent to your email.');
+      setTimer(60); // Start 1-minute cooldown
     } catch (error) {
       console.error('Forgot Password Error:', error);
       let errorMessage = 'An error occurred. Please try again.';
       navigation.navigate('Login');
+
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'User not found. Please check your email.';
       } else if (error.code === 'auth/invalid-email') {
@@ -104,10 +123,29 @@ export default function Forgot() {
             </View>
 
             <TouchableOpacity
-              onPress={handleForgotPassword} // Call the function here
-              style={[style.btn, { marginTop: 70, marginBottom: 20 }]}
+              onPress={handleForgotPassword}
+              disabled={loading || timer > 0}
+              style={[
+                style.btn,
+                {
+                  marginTop: 70,
+                  marginBottom: 20,
+                  opacity: loading || timer > 0 ? 0.6 : 1,
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+              ]}
             >
-              <Text style={[style.btntxt, { marginBottom: -8 }]}>SEND ME EMAIL</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : timer > 0 ? (
+                <Text style={[style.btntxt, { marginBottom: -8 }]}>
+                  Resend in {timer}s
+                </Text>
+              ) : (
+                <Text style={[style.btntxt, { marginBottom: -8 }]}>SEND ME EMAIL</Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </View>

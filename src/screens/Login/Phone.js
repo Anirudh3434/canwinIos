@@ -1,5 +1,5 @@
 /**
- * Developed by Aman Kumar
+ * Developed by Aman Kumar And Anirudh Bhardwaj
  * Date: 2025-01-31
  * Description: Manually Enter Number to send OTP on Provided number.
  */
@@ -14,8 +14,9 @@ import {
   StatusBar,
   ScrollView,
   Platform,
+  Alert,
 } from 'react-native';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Colors } from '../../theme/color';
 import style from '../../theme/style';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -28,23 +29,31 @@ export default function Phone() {
   const route = useRoute();
   const navigation = useNavigation();
   const { data } = route.params;
-  const [phoneNumber, setPhoneNumber] = useState();
+  const [phoneNumber, setPhoneNumber] = useState(data?.data?.mobile_number || '');
+  const [loading, setLoading] = useState(false); // To prevent multiple OTP sends
   const phoneInput = useRef(null);
 
-  console.log(phoneNumber);
-
-
-
+  useEffect(() => {
+    Alert.alert(
+      'Note',
+      'Please select the country code before proceeding.',
+      [{ text: 'OK' }]
+    );
+  }, []);
 
   const sendOtp = async () => {
+    if (loading) return; // Prevent multiple presses
+    setLoading(true);
     try {
-      console.log(phoneNumber)
+      console.log(phoneNumber);
       const confirmation = await auth().signInWithPhoneNumber(phoneNumber);
       console.log(confirmation);
-      navigation.navigate('Otp', { confirmation, type: 'phone' });
+      navigation.navigate('Otp', { confirmation, type: 'phone', phoneNumber });
     } catch (error) {
       console.error('OTP send error:', error);
-      alert('Failed to send OTP. Please check the number.');
+      Alert.alert('Failed to send OTP. Please check the number.');
+    } finally {
+      setLoading(false); // Allow retry if needed
     }
   };
 
@@ -85,34 +94,37 @@ export default function Phone() {
             </Text>
 
             <PhoneInput
-  ref={phoneInput}
-  defaultValue={phoneNumber}
-  defaultCode="IN" // <- This sets default to India
-  layout="first"
-  onChangeFormattedText={text => setPhoneNumber(text)}
-  codeTextStyle={{ color: Colors.txt }}
-  textInputProps={{ placeholderTextColor: '#9E9E9E' }}
-  textInputStyle={{ color: Colors.txt }}
-  containerStyle={{
-    height: 64,
-    width: '100%',
-    borderColor: Colors.primary,
-    borderRadius: 10,
-    backgroundColor: Colors.bg,
-    borderWidth: 1,
-    marginTop: 20,
-    marginBottom: 20,
-  }}
-  textContainerStyle={{
-    paddingVertical: 0,
-    borderRadius: 50,
-    backgroundColor: Colors.bg,
-  }}
-/>
+              ref={phoneInput}
+              defaultValue={phoneNumber}
+              layout="first"
+              onChangeFormattedText={(text) => setPhoneNumber(text)}
+              codeTextStyle={{ color: Colors.txt }}
+              textInputProps={{ placeholderTextColor: '#9E9E9E' }}
+              textInputStyle={{ color: Colors.txt }}
+              containerStyle={{
+                height: 64,
+                width: '100%',
+                borderColor: Colors.primary,
+                borderRadius: 10,
+                backgroundColor: Colors.bg,
+                borderWidth: 1,
+                marginTop: 20,
+                marginBottom: 20,
+              }}
+              textContainerStyle={{
+                paddingVertical: 0,
+                borderRadius: 50,
+                backgroundColor: Colors.bg,
+              }}
+            />
           </ScrollView>
 
-          <TouchableOpacity onPress={sendOtp} style={[style.btn, { marginVertical: 20 }]}>
-            <Text style={[style.btntxt]}>CONTINUE</Text>
+          <TouchableOpacity
+            onPress={sendOtp}
+            style={[style.btn, { marginVertical: 20, opacity: loading ? 0.5 : 1 }]}
+            disabled={loading}
+          >
+            <Text style={[style.btntxt]}>{loading ? 'SENDING...' : 'CONTINUE'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

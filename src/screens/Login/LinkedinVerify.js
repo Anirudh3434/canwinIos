@@ -17,9 +17,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 
-
 export default function LinkedinVerify() {
-
   const role = useSelector((state) => state.role.role);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
@@ -27,8 +25,7 @@ export default function LinkedinVerify() {
   const [userData, setUserData] = useState(null);
   const scaleAnim = useState(new Animated.Value(0))[0];
 
-
-  console.log('role', role)
+  console.log('role', role);
   useEffect(() => {
     const params = route.params;
 
@@ -60,7 +57,7 @@ export default function LinkedinVerify() {
       Alert.alert('Error', 'No user data available.');
       return;
     }
-     console.log('starting')
+    console.log('starting');
 
     try {
       const { email, firstName, lastName, picture } = userData; // Include picture from userData
@@ -73,19 +70,15 @@ export default function LinkedinVerify() {
         password,
         phone: '',
         status: 'Active',
-        role_type: role
- 
+        role_type: role,
       };
 
       console.log('Params:', params);
-      
+
       const response = await axios.post(API_ENDPOINTS.REGISTER_USER, params);
       console.log('API Response:', response.data);
 
       let userId;
-     
-      
-
 
       if (response.data.status === 'success') {
         console.log('Registration successful');
@@ -116,29 +109,23 @@ export default function LinkedinVerify() {
         const loginResponse = await axios.get(`${API_ENDPOINTS.AUTHENTICATION}?email=${email}`);
         console.log('Login Response:', loginResponse.data);
 
-
-
-
-
-
         userId = loginResponse.data?.data?.user_id;
-       let  role_Id = loginResponse.data?.data?.role_id;
+        let role_Id = loginResponse.data?.data?.role_id;
 
         console.log('User ID:', userId);
         console.log('Role ID:', role_Id);
 
+        const getStepsResponse = await axios.get(API_ENDPOINTS.STEP, {
+          params: { user_id: +userId },
+        });
 
-    const getStepsResponse =  await axios.get(API_ENDPOINTS.STEP , {params :{user_id : +userId }})
-
-        if(getStepsResponse.data.status == 'error')
-          {
-            const stepsResponse = await axios.post(API_ENDPOINTS.STEP, { 
-          user_id: userId,
-          role_id: role_Id,
-          steps: '1' ,
-        });}
-
-
+        if (getStepsResponse.data.status == 'error') {
+          const stepsResponse = await axios.post(API_ENDPOINTS.STEP, {
+            user_id: userId,
+            role_id: role_Id,
+            steps: '1',
+          });
+        }
 
         if (userId) {
           await AsyncStorage.setItem('userId', userId);
@@ -198,10 +185,15 @@ export default function LinkedinVerify() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.homeButton}
-        disabled={loading}
-        onPress={handleLinkedinPress}>z
-          <Text style={styles.buttonText}>{loading ? 'Verifying...' : 'Continue with LinkedIn'}</Text>
+        <TouchableOpacity
+          style={styles.homeButton}
+          disabled={loading}
+          onPress={handleLinkedinPress}
+        >
+          z
+          <Text style={styles.buttonText}>
+            {loading ? 'Verifying...' : 'Continue with LinkedIn'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

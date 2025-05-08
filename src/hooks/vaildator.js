@@ -1,10 +1,10 @@
-
-import { StyleSheet, Text, View, ActivityIndicator , BackHandler } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, BackHandler } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from '../api/apiConfig';
 import axios from 'axios';
+import { CommonActions } from '@react-navigation/native';
 
 export default function Validator() {
   const navigation = useNavigation();
@@ -13,22 +13,13 @@ export default function Validator() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-
-
-
-
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      () => {
-        return true;
-      },
-    );
-    return () => backHandler.remove();
-  }, []);
+    const handleBackButton = () => {
+      // Prevent back button behavior when loading
+      return loading; // Return true to prevent default back press, false to allow it
+    };
 
-  useEffect(() => {
-
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackButton);
 
     const getUserId = async () => {
       try {
@@ -36,7 +27,6 @@ export default function Validator() {
         const storedUserId = await AsyncStorage.getItem('userId');
         console.log('User ID:', storedUserId);
         setUserId(storedUserId);
-
       } catch (err) {
         console.error('❌ Error fetching user ID:', err);
         setError(err);
@@ -44,13 +34,15 @@ export default function Validator() {
       }
     };
     getUserId();
-  }, []);
+
+    return () => backHandler.remove(); // Remove the listener on unmount
+  }, [loading]); // Add loading as a dependency so the effect re-runs when loading changes
 
   // ✅ Fetch Steps when userId is set
   useEffect(() => {
     const fetchSteps = async () => {
       if (!userId) return;
-      
+
       try {
         console.log('Fetching Steps...');
         const response = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userId}`);
@@ -63,7 +55,7 @@ export default function Validator() {
         setLoading(false);
       }
     };
-    
+
     fetchSteps();
   }, [userId]);
 
@@ -75,10 +67,10 @@ export default function Validator() {
         1: ['VId', 'Category', 'Location', 'MyTabs'],
         2: ['VId', 'ComDetail', 'KycReview', 'MyTabs'],
       };
-      
-      const route = roleRoutes[role_id]?.[parseInt(step) - 1];
-      if (route) {
-        navigation.replace(route); // Use replace to prevent going back to Validator
+
+      const routeName = roleRoutes[role_id]?.[parseInt(step) - 1];
+      if (routeName) {
+        navigation.navigate(routeName);
       }
     }
   }, [steps, navigation]);
