@@ -1,8 +1,9 @@
 require_relative '../node_modules/react-native/scripts/react_native_pods'
+require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
-platform :ios, '15.2'  # Minimum iOS deployment target
+platform :ios, '15.2'
 
-use_modular_headers!  # Globally enable modular headers
+use_modular_headers!
 use_frameworks! :linkage => :static
 
 prepare_react_native_project!
@@ -17,28 +18,26 @@ target 'Jobile' do
 
   pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
 
-  # Firebase Modules with Modular Headers
   pod 'Firebase/Auth', :modular_headers => true
   pod 'Firebase/AppCheck', :modular_headers => true
   pod 'Firebase/Firestore', :modular_headers => true
 
- use_react_native!(
-  :path => config[:reactNativePath],
-  :hermes_enabled => true,
-  :fabric_enabled => false,
-  :app_path => "#{Pod::Config.instance.installation_root}/.."
-)
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => true,
+    :fabric_enabled => false,
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
 
   target 'JobileTests' do
     inherit! :complete
   end
 
-  # Apply Xcode 14.3 workaround to ensure minimum iOS version for all pods
   def __apply_Xcode_14_3_RC_post_install_workaround(installer)
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         current_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
-        minimum_target = '15.2'  # Ensure all dependencies match minimum iOS 15.2
+        minimum_target = '15.2'
         if current_target.to_f < minimum_target.to_f
           config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_target
         end
@@ -59,7 +58,6 @@ target 'Jobile' do
       end
     end
 
-    # Apply the Xcode 14.3 RC Fix
     __apply_Xcode_14_3_RC_post_install_workaround(installer)
   end
 end

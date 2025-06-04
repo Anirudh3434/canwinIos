@@ -1,3 +1,4 @@
+// LocationSelection.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,19 +15,20 @@ import {
   Dimensions,
   BackHandler,
 } from 'react-native';
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyB0za9KmGAwFEMFzQnkNezm2xW4rHPEczU'; // Your API Key
+const GOOGLE_MAPS_API_KEY = 'AIzaSyB0za9KmGAwFEMFzQnkNezm2xW4rHPEczU';
 
 const { height, width } = Dimensions.get('window');
 
 const LocationSelection = () => {
   const [selectedLocation, setSelectedLocation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [locationError, setLocationError] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [userid, setUserId] = useState(null);
   const [roleId, setRoleId] = useState(null);
@@ -56,77 +58,20 @@ const LocationSelection = () => {
   }, []);
 
   useEffect(() => {
-    const backAction = () => {
-      // Your custom back button logic
-      return true; // Prevent default behavior
-    };
-
+    const backAction = () => true;
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
-    return () => backHandler.remove(); // Clean up on unmount
+    return () => backHandler.remove();
   }, []);
 
   const requestLocationPermission = async () => {
-    if (Platform.OS === 'ios') {
-      // iOS permission handling is done by the Geolocation service itself
-      return true;
-    }
-
     try {
-      // For Android 12+ (API 31+), you might need both permissions
-      if (Platform.Version >= 31) {
-        const fineLocationGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Precise Location Permission',
-            message:
-              'We need access to your precise location to show relevant information near you.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
-        );
-
-        const backgroundLocationGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_BACKGROUND_LOCATION,
-          {
-            title: 'Background Location Permission',
-            message:
-              'We need access to your location in the background to provide continuous service.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
-        );
-
-        return fineLocationGranted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-      // For Android 10+ (API 29+)
-      else if (Platform.Version >= 29) {
-        const fineLocationGranted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Permission',
-            message: 'We need access to your location to show relevant information near you.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
-        );
-
-        return fineLocationGranted === PermissionsAndroid.RESULTS.GRANTED;
-      }
-      // For Android 9 and below
-      else {
+      if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Permission',
-            message: 'We need access to your location to show relevant information near you.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          }
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
-
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
+      return true;
     } catch (err) {
       console.warn('Error requesting location permission:', err);
       return false;
@@ -134,6 +79,7 @@ const LocationSelection = () => {
   };
 
   const fetchLocation = async () => {
+    setLocationError(null);
     const hasPermission = await requestLocationPermission();
 
     if (!hasPermission) {
@@ -143,57 +89,108 @@ const LocationSelection = () => {
 
     setLoading(true);
 
+    // Configure geolocation options
+    Geolocation.setRNConfiguration({
+      skipPermissionRequests: false,
+      authorizationLevel: 'whenInUse',
+      locationProvider: 'auto',
+    });
+
+    // First try with lower accuracy but faster response
     Geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
-
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
-
-        try {
-          const response = await fetch(url);
-          const data = await response.json();
-
-          if (data.status === 'OK' && data.results.length > 0) {
-            // Extract city name or locality from the address components
-            let cityName = null;
-            const addressComponents = data.results[0].address_components;
-
-            for (const component of addressComponents) {
-              if (
-                component.types.includes('locality') ||
-                component.types.includes('administrative_area_level_2') ||
-                component.types.includes('administrative_area_level_1')
-              ) {
-                cityName = component.long_name;
-                break;
-              }
-            }
-
-            const address = cityName || data.results[0].formatted_address;
-            setCurrentLocation(address);
-            setSelectedLocation(address);
-          } else {
-            Alert.alert('Failed to get location', 'Try again later');
-          }
-        } catch (error) {
-          console.error('Error fetching location details:', error);
-          Alert.alert('Error', 'Failed to fetch location');
-        } finally {
-          setLoading(false);
-        }
+        handleLocationSuccess(position);
       },
       (error) => {
-        console.error('Geolocation error:', error);
-        Alert.alert('Error', 'Failed to get location. Please ensure GPS is enabled.');
-        setLoading(false);
+        console.log('Initial location attempt failed, trying with higher timeout:', error);
+        // If the first attempt fails, try again with higher accuracy and timeout
+        Geolocation.getCurrentPosition(
+          async (position) => {
+            handleLocationSuccess(position);
+          },
+          (finalError) => {
+            handleLocationError(finalError);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 30000, // Extended timeout
+            maximumAge: 10000,
+          }
+        );
       },
       {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000,
+        enableHighAccuracy: false, // Lower accuracy for faster response
+        timeout: 10000,
+        maximumAge: 60000, // Accept older cached positions
       }
     );
+  };
+
+  const handleLocationSuccess = async (position) => {
+    const { latitude, longitude } = position.coords;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.status === 'OK' && data.results.length > 0) {
+        let cityName = null;
+        const addressComponents = data.results[0].address_components;
+
+        for (const component of addressComponents) {
+          if (
+            component.types.includes('locality') ||
+            component.types.includes('administrative_area_level_2') ||
+            component.types.includes('administrative_area_level_1')
+          ) {
+            cityName = component.long_name;
+            break;
+          }
+        }
+
+        const address = cityName || data.results[0].formatted_address;
+        setCurrentLocation(address);
+        setSelectedLocation(address);
+      } else {
+        setLocationError('Could not determine location name');
+        Alert.alert(
+          'Location Service Issue',
+          'Unable to get your location details. Please select from the list below.'
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching location details:', error);
+      setLocationError('Failed to fetch location details');
+      Alert.alert('Error', 'Failed to fetch location details. Please select from the list below.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLocationError = (error) => {
+    console.error('Geolocation error:', error);
+    setLoading(false);
+    setLocationError(error.message || 'Failed to get location');
+
+    // Provide helpful error message based on error code
+    let errorMessage = 'Failed to get your location. ';
+
+    switch (error.code) {
+      case 1: // PERMISSION_DENIED
+        errorMessage += 'Please check that location permissions are enabled.';
+        break;
+      case 2: // POSITION_UNAVAILABLE
+        errorMessage += 'Location information is unavailable. Please ensure GPS is enabled.';
+        break;
+      case 3: // TIMEOUT
+        errorMessage += 'Request timed out. Please try again or select a location from the list.';
+        break;
+      default:
+        errorMessage += 'Please try again or select a location from the list.';
+    }
+
+    Alert.alert('Location Error', errorMessage);
   };
 
   const handleSubmit = async () => {
@@ -207,6 +204,8 @@ const LocationSelection = () => {
       return;
     }
 
+    setLoading(true);
+
     const data = {
       user_id: userid,
       prefered_location: selectedLocation,
@@ -214,37 +213,29 @@ const LocationSelection = () => {
 
     try {
       const response = await axios.post(API_ENDPOINTS.CAREER, data);
-      console.log(response.data);
-
       if (response.data.status === 'success') {
-        try {
-          // Get current step
-          const getStepResponse = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userid}`);
+        const getStepResponse = await axios.get(`${API_ENDPOINTS.STEP}?user_id=${userid}`);
 
-          if (getStepResponse.data.status === 'success') {
-            const currentStep = getStepResponse.data.data.steps;
-            setStep(currentStep);
+        if (getStepResponse.data.status === 'success') {
+          const currentStep = getStepResponse.data.data.steps;
+          setStep(currentStep);
 
-            // Post new step
-            const stepResponse = await axios.post(API_ENDPOINTS.STEP, {
-              user_id: userid,
-              role_id: roleId,
-              steps: +currentStep + 1,
-            });
+          const stepResponse = await axios.post(API_ENDPOINTS.STEP, {
+            user_id: userid,
+            role_id: roleId,
+            steps: +currentStep + 1,
+          });
 
-            console.log(stepResponse.data);
-            if (stepResponse.data.status === 'success') {
-              navigation.navigate('Validate');
-            }
+          if (stepResponse.data.status === 'success') {
+            navigation.navigate('Validate');
           }
-        } catch (error) {
-          console.log('Step update error:', error);
-          Alert.alert('Error', 'Failed to update progress. Please try again.');
         }
       }
     } catch (error) {
       console.log('Location post error:', error);
       Alert.alert('Error', 'Failed to save location preference. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -254,19 +245,30 @@ const LocationSelection = () => {
       <View style={styles.container}>
         <Text style={styles.title}>Where do you want to work?</Text>
 
-        <TouchableOpacity style={styles.locationButton} onPress={fetchLocation}>
+        <TouchableOpacity
+          style={[styles.locationButton, locationError && styles.locationButtonError]}
+          onPress={fetchLocation}
+          disabled={loading}
+        >
           <Image
             source={require('../../../assets/image/location.png')}
             style={{ width: 20, height: 20 }}
           />
           {loading ? (
-            <ActivityIndicator size="small" color="#14B6AA" />
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="small" color="#14B6AA" />
+              <Text style={styles.loadingText}>Detecting location...</Text>
+            </View>
           ) : (
             <Text style={styles.locationText}>
               {currentLocation ? currentLocation : 'Select Current Location'}
             </Text>
           )}
         </TouchableOpacity>
+
+        {locationError && (
+          <Text style={styles.errorText}>Please select a location from the list below</Text>
+        )}
 
         <View style={styles.locationList}>
           {locations.map((location, index) => (
@@ -278,7 +280,14 @@ const LocationSelection = () => {
               ]}
               onPress={() => setSelectedLocation(location.title)}
             >
-              <Text style={styles.jobTitle}>{location.title}</Text>
+              <Text
+                style={[
+                  styles.jobTitle,
+                  selectedLocation === location.title && styles.selectedJobTitle,
+                ]}
+              >
+                {location.title}
+              </Text>
               {selectedLocation === location.title && (
                 <Image
                   source={require('../../../assets/image/tick.png')}
@@ -290,8 +299,20 @@ const LocationSelection = () => {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.proceedButton} onPress={handleSubmit}>
-          <Text style={styles.proceedButtonText}>Proceed</Text>
+        <TouchableOpacity
+          style={[
+            styles.proceedButton,
+            !selectedLocation && styles.proceedButtonDisabled,
+            loading && styles.proceedButtonDisabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={!selectedLocation || loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.proceedButtonText}>Proceed</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -305,13 +326,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    padding: width * 0.05, // 5% of screen width
-    marginTop: height * 0.1, // 10% of screen height
+    padding: width * 0.05,
+    marginTop: height * 0.1,
   },
   title: {
-    fontSize: width * 0.08, // 8% of screen width
+    fontSize: width * 0.08,
     fontWeight: 'bold',
-    marginBottom: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02,
     textAlign: 'center',
   },
   locationButton: {
@@ -319,15 +340,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: width * 0.05,
-    height: height * 0.08, // 8% of screen height
+    height: height * 0.08,
     backgroundColor: '#F9F9F9',
     padding: width * 0.04,
     borderRadius: 8,
     marginBottom: height * 0.02,
   },
+  locationButtonError: {
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  loaderContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: width * 0.02,
+  },
+  loadingText: {
+    fontSize: width * 0.04,
+    color: '#14B6AA',
+  },
   locationText: {
     flex: 1,
     fontSize: width * 0.04,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: width * 0.035,
+    marginBottom: height * 0.02,
     textAlign: 'center',
   },
   locationList: {
@@ -343,27 +385,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    marginBottom: height * 0.015,
     width: '100%',
+    justifyContent: 'space-between',
   },
   selectedJobButton: {
     borderColor: '#14B6AA',
-    backgroundColor: '#14B6AA0A',
+    backgroundColor: '#E6FAF9',
   },
   jobTitle: {
-    fontSize: width * 0.045, // 4.5% of screen width
-    flex: 1,
+    fontSize: width * 0.045,
+  },
+  selectedJobTitle: {
+    fontWeight: '500',
+    color: '#14B6AA',
   },
   proceedButton: {
+    marginTop: height * 0.05,
     backgroundColor: '#14B6AA',
     padding: width * 0.04,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: height * 0.03,
+  },
+  proceedButtonDisabled: {
+    backgroundColor: '#B4DCD9',
   },
   proceedButtonText: {
     color: '#fff',
-    fontSize: width * 0.05,
+    fontSize: width * 0.045,
     fontWeight: 'bold',
   },
 });

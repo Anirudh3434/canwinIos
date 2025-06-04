@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  Platform,
+  ToastAndroid,
 } from 'react-native';
 import { AppBar } from '@react-native-material/core';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -19,6 +21,7 @@ import { API_ENDPOINTS } from '../../api/apiConfig';
 import JobSeekerCard from '../../Components/Cards/JobSeekerCard';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Application = ({ navigation }) => {
   const [applications, setApplications] = useState([]);
@@ -31,6 +34,60 @@ const Application = ({ navigation }) => {
 
   const toggleJobApplicants = (index) => {
     setSelectedJobIndex((prevIndex) => (prevIndex === index ? null : index));
+  };
+
+  // Helper function to show toast across platforms
+  const showToast = (message) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else if (Platform.OS === 'ios') {
+      // For iOS we'll use Alert as a fallback since there's no ToastIOS
+      Alert.alert('', message, [{ text: 'OK' }], { cancelable: true });
+    }
+  };
+
+  const handleJobClick = async (job) => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.FETCH_JOB_APPlicants, {
+        params: { job_id: job.job_id },
+      });
+
+      if (response.data && response.data.status === 'success') {
+        const applicantsData = response.data.data;
+
+        // Check if applicants are available before updating state
+        if (!applicantsData || applicantsData.length === 0) {
+          console.log('No applicants found for this job');
+          showToast('No applicants found for this job');
+          return;
+        }
+
+        // Create a copy of the applications array
+        const updatedApplications = [...applications];
+
+        // Find the specific job by job_id
+        const jobIndex = updatedApplications.findIndex((item) => item.job_id === job.job_id);
+
+        if (jobIndex !== -1) {
+          // Update the job with applicants data
+          updatedApplications[jobIndex] = {
+            ...updatedApplications[jobIndex],
+            applicants: applicantsData,
+          };
+
+          // Update the state with the new data
+          setApplications(updatedApplications);
+
+          // Automatically toggle the job applicants view
+          toggleJobApplicants(jobIndex);
+        }
+      } else {
+        showToast('No applicants found for this job');
+      }
+    } catch (error) {
+      console.error('Error fetching job applicants:', error);
+      showToast('No applicants found for this job');
+    }
   };
 
   const fetchUserId = async () => {
@@ -69,7 +126,7 @@ const Application = ({ navigation }) => {
       }
 
       const response = await axios.get(API_ENDPOINTS.FETCH_JOB_POSTING, {
-        params: { user_id: userId , status },
+        params: { user_id: userId, status },
       });
 
       if (response.data && response.data.data) {
@@ -84,6 +141,10 @@ const Application = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSeeResume = (seeker) => {
+    navigation.navigate('Resume', { seeker });
   };
 
   // Initialize user data
@@ -312,65 +373,47 @@ const Application = ({ navigation }) => {
               <View style={{ zIndex: 1 }}>
                 <JobCard
                   job={item}
-                  onMenu={() => toggleMenu(item.job_id || index)}
-                  onEdit={() => navigation.navigate('AddJob', { job: item })}
-                  onDelete={() => handleDelete(item)}
-                  onRepost={() => handleRepost(item)}
-                  onPress={() => toggleJobApplicants(index)}
+                  onClick={() => {
+                    handleJobClick(item);
+                  }}
                   home={true}
                 />
               </View>
 
-              {/* Only show menu for the card that was clicked */}
-              {menuVisibleForJobId === (item.job_id || index) && (
-                <View style={styles.menu}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setMenuVisibleForJobId(null);
-                      handleRepost(item);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.menuItem}>Re-Post</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setMenuVisibleForJobId(null);
-                      navigation.navigate('AddJob', { job: item });
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.menuItem}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setMenuVisibleForJobId(null);
-                      handleDelete(item);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.menuItem, { color: '#DC1F1F' }]}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+              {selectedJobIndex === index &&
+                item.applicants?.length > 0 &&
+                (() => {
+                  const filteredApplicants = item.applicants.filter(
+                    (applicant) =>
+                      !['shortlisted', 'schedule', 'reject'].includes(
+                        applicant.application_status.toLowerCase()
+                      )
+                  );
 
-              {selectedJobIndex === index && item.applicants && item.applicants.length > 0 && (
-                <View style={styles.applicantContainer}>
-                  <Text style={styles.applicantTitle}>Applicants</Text>
-                  <FlatList
-                    data={item.applicants}
-                    keyExtractor={(applicant, appIndex) => `applicant-${appIndex}`}
-                    renderItem={({ item: applicant }) => (
-                      <JobSeekerCard
-                        seeker={applicant}
-                        onSeeResume={() => {}}
-                        onSeeDetails={() => navigation.navigate('VistorProfile', { applicant })}
+                  if (filteredApplicants.length === 0) {
+                    showToast('No applicants found for this job');
+                    setSelectedJobIndex(null);
+                  }
+
+                  return (
+                    <View style={styles.applicantContainer}>
+                      <Text style={styles.applicantTitle}>Applicants</Text>
+
+                      <FlatList
+                        data={filteredApplicants}
+                        keyExtractor={(applicant, appIndex) => `applicant-${appIndex}`}
+                        renderItem={({ item: applicant }) => (
+                          <JobSeekerCard
+                            seeker={applicant}
+                            onSeeResume={() => {}}
+                            onSeeDetails={() => navigation.navigate('VistorProfile', { applicant })}
+                          />
+                        )}
+                        contentContainerStyle={styles.applicantListContainer}
                       />
-                    )}
-                    contentContainerStyle={styles.applicantListContainer}
-                  />
-                </View>
-              )}
+                    </View>
+                  );
+                })()}
             </View>
           )}
           contentContainerStyle={styles.mainListContainer}

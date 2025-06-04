@@ -1,6 +1,6 @@
-"use client"
+'use client';
 
-import { useRef } from "react"
+import { useRef } from 'react';
 import {
   View,
   Text,
@@ -14,18 +14,18 @@ import {
   Platform,
   NativeModules,
   StatusBar,
-} from "react-native"
-import Icon from "react-native-vector-icons/Feather"
-import Ionicons from "react-native-vector-icons/Ionicons"
-import RNHTMLtoPDF from "react-native-html-to-pdf"
-import RNFS from "react-native-fs"
-import Share from "react-native-share"
-import RNFetchBlob from "react-native-blob-util"
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import RNFS from 'react-native-fs';
+import Share from 'react-native-share';
+import RNFetchBlob from 'react-native-blob-util';
 
-const { PermissionFileModule } = NativeModules
+const { PermissionFileModule } = NativeModules;
 
 const ResumeTemplate = ({ route, navigation }) => {
-  const resumeRef = useRef(null)
+  const resumeRef = useRef(null);
 
   // Extract data from route params
   const {
@@ -34,47 +34,49 @@ const ResumeTemplate = ({ route, navigation }) => {
     employmentData = [],
     projectData = [],
     skillData = [],
-    socialLinks = { linkedin: "", github: "" },
-  } = route?.params || {}
+    socialLinks = { linkedin: '', github: '' },
+  } = route?.params || {};
 
   // Format data for the resume
   const resumeData = {
-    name: personalData.fullName || "",
+    name: personalData.fullName || '',
     location:
-      (personalData.city || "") + (personalData.city && personalData.state ? ", " : "") + (personalData.state || ""),
+      (personalData.city || '') +
+      (personalData.city && personalData.state ? ', ' : '') +
+      (personalData.state || ''),
     contact: {
-      phone: personalData.phone || "",
-      email: personalData.email || "",
-      linkedin: socialLinks.linkedin || "",
-      github: socialLinks.github || "",
+      phone: personalData.phone || '',
+      email: personalData.email || '',
+      linkedin: socialLinks.linkedin || '',
+      github: socialLinks.github || '',
     },
     education: educationData || [],
     experience: employmentData || [],
     projects: projectData || [],
     skills: skillData || [],
-  }
+  };
 
   const requestStoragePermission = async () => {
-    if (Platform.OS !== "android") {
-      return true
+    if (Platform.OS !== 'android') {
+      return true;
     }
 
     try {
       // First try using our native module if available
       if (PermissionFileModule) {
-        const hasPermission = await PermissionFileModule.checkStoragePermission()
+        const hasPermission = await PermissionFileModule.checkStoragePermission();
 
         if (!hasPermission) {
-          await PermissionFileModule.requestStoragePermission()
+          await PermissionFileModule.requestStoragePermission();
           // Check again after request
-          return await PermissionFileModule.checkStoragePermission()
+          return await PermissionFileModule.checkStoragePermission();
         }
 
-        return hasPermission
+        return hasPermission;
       }
 
       // Fallback to the standard React Native approach
-      const androidVersion = Platform.Version
+      const androidVersion = Platform.Version;
 
       if (androidVersion >= 33) {
         // For Android 13+ (API 33+)
@@ -82,51 +84,57 @@ const ResumeTemplate = ({ route, navigation }) => {
           PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
           PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
           PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
-        ]
+        ];
 
-        const statuses = await PermissionsAndroid.requestMultiple(permissions)
+        const statuses = await PermissionsAndroid.requestMultiple(permissions);
 
         return (
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES] === PermissionsAndroid.RESULTS.GRANTED &&
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO] === PermissionsAndroid.RESULTS.GRANTED &&
-          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO] === PermissionsAndroid.RESULTS.GRANTED
-        )
+          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES] ===
+            PermissionsAndroid.RESULTS.GRANTED &&
+          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO] ===
+            PermissionsAndroid.RESULTS.GRANTED &&
+          statuses[PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO] ===
+            PermissionsAndroid.RESULTS.GRANTED
+        );
       } else {
         // For Android 12 and below
-        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, {
-          title: "Storage Permission Required",
-          message: "This app needs access to your storage to download the PDF",
-          buttonNeutral: "Ask Me Later",
-          buttonNegative: "Cancel",
-          buttonPositive: "OK",
-        })
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission Required',
+            message: 'This app needs access to your storage to download the PDF',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
 
-        return granted === PermissionsAndroid.RESULTS.GRANTED
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
     } catch (err) {
-      console.warn("Permission request error:", err)
-      return false
+      console.warn('Permission request error:', err);
+      return false;
     }
-  }
+  };
 
   const handleContactPress = (type, value) => {
     switch (type) {
-      case "phone":
-        Linking.openURL(`tel:${value}`)
-        break
-      case "email":
-        Linking.openURL(`mailto:${value}`)
-        break
-      case "linkedin":
-        Linking.openURL(`https://${value}`)
-        break
-      case "github":
-        Linking.openURL(`https://${value}`)
-        break
+      case 'phone':
+        Linking.openURL(`tel:${value}`);
+        break;
+      case 'email':
+        Linking.openURL(`mailto:${value}`);
+        break;
+      case 'linkedin':
+        Linking.openURL(`https://${value}`);
+        break;
+      case 'github':
+        Linking.openURL(`https://${value}`);
+        break;
       default:
-        break
+        break;
     }
-  }
+  };
 
   // Function to generate HTML content for PDF
   const generateHTML = () => {
@@ -136,31 +144,29 @@ const ResumeTemplate = ({ route, navigation }) => {
     <div style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
         <div style="font-weight: 600; font-size: 15px; color: #333;">${
-          edu.instituteName || edu.institute_name || ""
+          edu.instituteName || edu.institute_name || ''
         }</div>
         <div style="font-size: 13px; color: #555;">${
-          edu?.education === "X" || edu?.education === "XII"
-            ? edu?.yearOfCompletion || edu?.year_of_completion || ""
-            : (edu?.startYear || edu?.year_of_start || "") +
-              " - " +
-              (edu?.yearOfCompletion || edu?.year_of_completion || "")
+          edu?.education === 'X' || edu?.education === 'XII'
+            ? edu?.yearOfCompletion || edu?.year_of_completion || ''
+            : (edu?.startYear || edu?.year_of_start || '') +
+              ' - ' +
+              (edu?.yearOfCompletion || edu?.year_of_completion || '')
         }</div>
       </div>
       <div style="font-size: 14px; color: #444; margin-bottom: 2px;">${
-        edu?.education === "X" || edu?.education === "XII"
-          ? edu?.education || ""
-          : (edu?.course || edu?.course_name || "") +
-            (
-              edu?.specialization || edu?.specialization_name
-                ? " in " + (edu?.specialization || edu?.specialization_name)
-                : ""
-            )
+        edu?.education === 'X' || edu?.education === 'XII'
+          ? edu?.education || ''
+          : (edu?.course || edu?.course_name || '') +
+            (edu?.specialization || edu?.specialization_name
+              ? ' in ' + (edu?.specialization || edu?.specialization_name)
+              : '')
       }</div>
-      <div style="font-size: 13px; color: #666;">Marks: ${edu.marks || ""}</div>
+      <div style="font-size: 13px; color: #666;">Marks: ${edu.marks || ''}</div>
     </div>
-  `,
+  `
       )
-      .join("")
+      .join('');
 
     const experienceHTML = resumeData.experience
       .map(
@@ -169,25 +175,27 @@ const ResumeTemplate = ({ route, navigation }) => {
       <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
         <div>
           <div style="font-size: 15px; font-weight: 600; color: #333; margin-bottom: 2px;">${
-            exp.CompanyName || exp.curr_company_name || ""
+            exp.CompanyName || exp.curr_company_name || ''
           }</div>
-          <div style="font-size: 14px; color: #444;">${exp.CurrentJobTitle || exp.curr_job_title || ""}</div>
+          <div style="font-size: 14px; color: #444;">${
+            exp.CurrentJobTitle || exp.curr_job_title || ''
+          }</div>
         </div>
         <div style="text-align: right;">
           <div style="font-size: 13px; color: #555; margin-bottom: 2px;">${
-            exp.JoiningDate || exp.joining_date || ""
-          }  ${exp.isCurrent === "Yes" ? "Present" :""}</div>
-          <div style="font-size: 13px; color: #555;">${exp.location || ""} ${
-            exp.total_exp_in_years || exp.total_exp_in_months
-              ? `• ${exp.total_exp_in_years || "0"}y ${exp.total_exp_in_months || "0"}m`
-              : ""
-          }</div>
+            exp.JoiningDate || exp.joining_date || ''
+          }  ${exp.isCurrent === 'Yes' ? 'Present' : ''}</div>
+          <div style="font-size: 13px; color: #555;">${exp.location || ''} ${
+          exp.total_exp_in_years || exp.total_exp_in_months
+            ? `• ${exp.total_exp_in_years || '0'}y ${exp.total_exp_in_months || '0'}m`
+            : ''
+        }</div>
         </div>
       </div>
     </div>
-  `,
+  `
       )
-      .join("")
+      .join('');
 
     const projectsHTML = resumeData.projects
       .map(
@@ -195,37 +203,39 @@ const ResumeTemplate = ({ route, navigation }) => {
     <div style="margin-bottom: 20px;">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
         <div style="font-size: 15px; font-weight: 600; color: #333; margin-right: 10px;">${
-          project.projectTitle || project.project_title || ""
+          project.projectTitle || project.project_title || ''
         }</div>
         <div style="font-size: 13px; color: #555; white-space: nowrap;">${
-          project?.projectStatus === "In-Progress" || project?.project_status === "In-Progress"
-            ? "Ongoing"
-            : (project.workFrom || project.work_from || "") + " - " + (project.workTill || project.work_till || "")
+          project?.projectStatus === 'In-Progress' || project?.project_status === 'In-Progress'
+            ? 'Ongoing'
+            : (project.workFrom || project.work_from || '') +
+              ' - ' +
+              (project.workTill || project.work_till || '')
         }</div>
       </div>
       <div style="margin-top: 4px;">
         <div style="font-size: 13px; line-height: 1.5; color: #444;">${
-          project.projectDetail || project.project_detail || ""
+          project.projectDetail || project.project_detail || ''
         }</div>
       </div>
     </div>
-  `,
+  `
       )
-      .join("")
+      .join('');
 
     const skillsHTML = `
     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
       ${resumeData.skills
         .map(
           (skill) => `
-        <span style="font-size: 14px; color: #444;">${
-          skill.skillName || skill || ""
-        }${resumeData.skills.indexOf(skill) < resumeData.skills.length - 1 ? " •" : ""}</span>
-      `,
+        <span style="font-size: 14px; color: #444;">${skill.skillName || skill || ''}${
+            resumeData.skills.indexOf(skill) < resumeData.skills.length - 1 ? ' •' : ''
+          }</span>
+      `
         )
-        .join(" ")}
+        .join(' ')}
     </div>
-  `
+  `;
 
     return `
     <html>
@@ -298,7 +308,7 @@ const ResumeTemplate = ({ route, navigation }) => {
                 <span style="font-size: 14px; color: #555;">🔗 ${resumeData.contact.linkedin}</span>
               </div>
               `
-                  : ""
+                  : ''
               }
               ${
                 resumeData.contact.github
@@ -307,7 +317,7 @@ const ResumeTemplate = ({ route, navigation }) => {
                 <span style="font-size: 14px; color: #555;">💻 ${resumeData.contact.github}</span>
               </div>
               `
-                  : ""
+                  : ''
               }
             </div>
           </div>
@@ -334,84 +344,49 @@ const ResumeTemplate = ({ route, navigation }) => {
         </div>
       </body>
     </html>
-  `
-  }
+  `;
+  };
 
-  // In the downloadPDF function, modify the code to ensure the PDF is properly saved to Downloads
   const downloadPDF = async () => {
     try {
-      const hasPermission = await requestStoragePermission()
-      if (!hasPermission && Platform.OS === "android") {
-        Alert.alert(
-          "Permission Required",
-          "Storage permission is needed to save your resume. Please enable it in settings.",
-          [{ text: "Open Settings", onPress: () => Linking.openSettings() }],
-        )
-        return
-      }
-
       // Show loading alert
-      Alert.alert("Generating PDF", "Please wait while your resume is being generated...")
+      Alert.alert('Generating PDF', 'Please wait while your resume is being generated...');
 
-      const fileName = `${resumeData.name.replace(/\s+/g, "_")}_Resume_${Date.now()}.pdf`
+      const fileName = `${resumeData.name.replace(/\s+/g, '_')}_Resume_${Date.now()}.pdf`;
+      const pdfPath =
+        Platform.OS === 'ios' ? `${RNFS.DocumentDirectoryPath}/${fileName}` : undefined; // android uses "Download" folder internally
 
-      // Generate PDF
       const options = {
         html: generateHTML(),
         fileName,
-        directory: Platform.OS === "android" ? "Download" : undefined,
+        directory: Platform.OS === 'android' ? 'Download' : undefined,
+        filePath: pdfPath,
         base64: false,
-      }
+      };
 
-      const file = await RNHTMLtoPDF.convert(options)
+      const file = await RNHTMLtoPDF.convert(options);
 
       if (file && file.filePath) {
-        let downloadPath = file.filePath
+        const pathToFile = file.filePath;
 
-        if (Platform.OS === "android") {
-          const newPath = `${RNFS.DownloadDirectoryPath}/${fileName}`
-          await RNFS.moveFile(file.filePath, newPath)
-          downloadPath = newPath
-
-          // Make file visible in Downloads
-          await RNFetchBlob.fs.scanFile([{ path: newPath, mime: "application/pdf" }])
-        }
-
-        // Success Alert with options
-        Alert.alert("PDF Saved Successfully", "Your resume has been saved to your device.", [
-          { text: "OK", style: "default" },
-          { text: "Share", onPress: () => sharePDF(downloadPath) },
-        ])
+        // Optional: share file immediately (especially for iOS)
+        await Share.open({
+          url: `file://${pathToFile}`,
+          title: 'Share Your Resume',
+          type: 'application/pdf',
+        });
       } else {
-        throw new Error("PDF file path is undefined")
+        throw new Error('PDF file path is undefined');
       }
     } catch (error) {
-      console.error("PDF Generation Error:", error)
-      Alert.alert("Error", "Failed to generate PDF. Please try again.")
+      console.error('PDF Generation Error:', error);
+      Alert.alert('Error', 'Failed to generate or share PDF. Please try again.');
     }
-  }
-
-  // Share PDF
-  const sharePDF = async (filePath) => {
-    try {
-      await Share.open({
-        url: `file://${filePath}`,
-        type: "application/pdf",
-        title: "Share Resume PDF",
-      })
-    } catch (error) {
-      console.error("Share Error:", error)
-      if (error.message !== "User did not share") {
-        Alert.alert("Share Error", "Could not share the PDF.")
-      }
-    }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
-
-     
+      <StatusBar backgroundColor={Colors.bg} barStyle="dark-content" />
 
       {/* Resume Content */}
       <ScrollView style={styles.scrollView}>
@@ -432,7 +407,7 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.contact.phone ? (
                 <TouchableOpacity
                   style={styles.contactItem}
-                  onPress={() => handleContactPress("phone", resumeData.contact.phone)}
+                  onPress={() => handleContactPress('phone', resumeData.contact.phone)}
                 >
                   <Icon name="phone" size={14} color="#666" />
                   <Text style={styles.contactText}>{resumeData.contact.phone}</Text>
@@ -442,7 +417,7 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.contact.email ? (
                 <TouchableOpacity
                   style={styles.contactItem}
-                  onPress={() => handleContactPress("email", resumeData.contact.email)}
+                  onPress={() => handleContactPress('email', resumeData.contact.email)}
                 >
                   <Icon name="mail" size={14} color="#666" />
                   <Text style={styles.contactText}>{resumeData.contact.email}</Text>
@@ -452,7 +427,7 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.contact.linkedin ? (
                 <TouchableOpacity
                   style={styles.contactItem}
-                  onPress={() => handleContactPress("linkedin", resumeData.contact.linkedin)}
+                  onPress={() => handleContactPress('linkedin', resumeData.contact.linkedin)}
                 >
                   <Icon name="linkedin" size={14} color="#666" />
                   <Text style={styles.contactText}>{resumeData.contact.linkedin}</Text>
@@ -462,7 +437,7 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.contact.github ? (
                 <TouchableOpacity
                   style={styles.contactItem}
-                  onPress={() => handleContactPress("github", resumeData.contact.github)}
+                  onPress={() => handleContactPress('github', resumeData.contact.github)}
                 >
                   <Icon name="github" size={14} color="#666" />
                   <Text style={styles.contactText}>{resumeData.contact.github}</Text>
@@ -480,26 +455,28 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.education.map((edu, index) => (
                 <View key={index} style={styles.educationItem}>
                   <View style={styles.educationHeader}>
-                    <Text style={styles.institutionName}>{edu.instituteName || edu.institute_name || ""}</Text>
+                    <Text style={styles.institutionName}>
+                      {edu.instituteName || edu.institute_name || ''}
+                    </Text>
                     <Text style={styles.educationPeriod}>
-                      {edu?.education === "X" || edu?.education === "XII"
-                        ? edu?.yearOfCompletion || edu?.year_of_completion || ""
-                        : (edu?.startYear || edu?.year_of_start || "") +
-                          " - " +
-                          (edu?.yearOfCompletion || edu?.year_of_completion || "")}
+                      {edu?.education === 'X' || edu?.education === 'XII'
+                        ? edu?.yearOfCompletion || edu?.year_of_completion || ''
+                        : (edu?.startYear || edu?.year_of_start || '') +
+                          ' - ' +
+                          (edu?.yearOfCompletion || edu?.year_of_completion || '')}
                     </Text>
                   </View>
 
                   <Text style={styles.degree}>
-                    {edu?.education === "X" || edu?.education === "XII"
-                      ? edu?.education || ""
-                      : (edu?.course || edu?.course_name || "") +
+                    {edu?.education === 'X' || edu?.education === 'XII'
+                      ? edu?.education || ''
+                      : (edu?.course || edu?.course_name || '') +
                         (edu?.specialization || edu?.specialization_name
-                          ? " in " + (edu?.specialization || edu?.specialization_name)
-                          : "")}
+                          ? ' in ' + (edu?.specialization || edu?.specialization_name)
+                          : '')}
                   </Text>
 
-                  <Text style={styles.educationDetails}>{"Marks: " + (edu.marks || "")}</Text>
+                  <Text style={styles.educationDetails}>{'Marks: ' + (edu.marks || '')}</Text>
                 </View>
               ))}
             </View>
@@ -515,22 +492,28 @@ const ResumeTemplate = ({ route, navigation }) => {
                 <View key={index} style={styles.experienceItem}>
                   <View style={styles.experienceHeader}>
                     <View>
-                      <Text style={styles.companyName}>{exp.CompanyName || exp.curr_company_name || ""}</Text>
-                      <Text style={styles.jobTitle}>{exp.CurrentJobTitle || exp.curr_job_title || ""}</Text>
+                      <Text style={styles.companyName}>
+                        {exp.CompanyName || exp.curr_company_name || ''}
+                      </Text>
+                      <Text style={styles.jobTitle}>
+                        {exp.CurrentJobTitle || exp.curr_job_title || ''}
+                      </Text>
                     </View>
 
                     <View style={styles.periodLocationContainer}>
                       <Text style={styles.periodText}>
-                        {`${exp.JoiningDate || exp.joining_date || ""}  ${
-                          exp.isCurrent === "Yes" ? "Present" : ""
+                        {`${exp.JoiningDate || exp.joining_date || ''}  ${
+                          exp.isCurrent === 'Yes' ? 'Present' : ''
                         }`}
                       </Text>
 
                       <View style={styles.locationRow}>
-                        <Text style={styles.locationText}>{exp.location || ""}</Text>
+                        <Text style={styles.locationText}>{exp.location || ''}</Text>
                         {(exp.total_exp_in_years || exp.total_exp_in_months) && (
                           <Text style={styles.durationText}>
-                            {` • ${exp.total_exp_in_years || "0"}y ${exp.total_exp_in_months || "0"}m`}
+                            {` • ${exp.total_exp_in_years || '0'}y ${
+                              exp.total_exp_in_months || '0'
+                            }m`}
                           </Text>
                         )}
                       </View>
@@ -550,18 +533,23 @@ const ResumeTemplate = ({ route, navigation }) => {
               {resumeData.projects.map((project, index) => (
                 <View key={index} style={styles.projectItem}>
                   <View style={styles.projectHeader}>
-                    <Text style={styles.projectName}>{project.projectTitle || project.project_title || ""}</Text>
+                    <Text style={styles.projectName}>
+                      {project.projectTitle || project.project_title || ''}
+                    </Text>
 
                     <Text style={styles.projectPeriod}>
-                      {project?.projectStatus === "In-Progress" || project?.project_status === "In-Progress"
-                        ? "Ongoing"
-                        : (project.workFrom || project.work_from || "") +
-                          " - " +
-                          (project.workTill || project.work_till || "")}
+                      {project?.projectStatus === 'In-Progress' ||
+                      project?.project_status === 'In-Progress'
+                        ? 'Ongoing'
+                        : (project.workFrom || project.work_from || '') +
+                          ' - ' +
+                          (project.workTill || project.work_till || '')}
                     </Text>
                   </View>
 
-                  <Text style={styles.projectDescription}>{project.projectDetail || project.project_detail || ""}</Text>
+                  <Text style={styles.projectDescription}>
+                    {project.projectDetail || project.project_detail || ''}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -576,8 +564,8 @@ const ResumeTemplate = ({ route, navigation }) => {
               <View style={styles.skillsContainer}>
                 {resumeData.skills.map((skill, index) => (
                   <Text key={index} style={styles.skillItem}>
-                    {skill.skillName || skill || ""}
-                    {index < resumeData.skills.length - 1 ? " • " : ""}
+                    {skill.skillName || skill || ''}
+                    {index < resumeData.skills.length - 1 ? ' • ' : ''}
                   </Text>
                 ))}
               </View>
@@ -594,24 +582,23 @@ const ResumeTemplate = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: '#f8f9fa',
   },
   header: {
-    
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: "#eaeaea",
+    borderBottomColor: '#eaeaea',
     elevation: 2,
   },
   backButton: {
@@ -619,67 +606,66 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
   },
   placeholder: {
     width: 24,
   },
   scrollView: {
     flex: 1,
-    
   },
   resumeContainer: {
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     margin: 16,
     padding: 20,
     borderRadius: 12,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   resumeHeader: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: 24,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaeaea",
+    borderBottomColor: '#eaeaea',
   },
   name: {
     fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 6,
-    textAlign: "center",
+    textAlign: 'center',
   },
   locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 12,
   },
   location: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
     marginLeft: 6,
   },
   contactInfo: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     marginTop: 4,
   },
   contactItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: 8,
     marginBottom: 8,
   },
   contactText: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
     marginLeft: 6,
   },
   section: {
@@ -687,135 +673,135 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: 'bold',
+    color: '#333',
     marginBottom: 8,
   },
   divider: {
     height: 1,
-    backgroundColor: "#eaeaea",
+    backgroundColor: '#eaeaea',
     marginBottom: 16,
   },
   educationItem: {
     marginBottom: 16,
   },
   educationHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 4,
   },
   institutionName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
   },
   educationPeriod: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   degree: {
     fontSize: 15,
-    color: "#444",
+    color: '#444',
     marginBottom: 2,
   },
   educationDetails: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   experienceItem: {
     marginBottom: 20,
   },
   experienceHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   companyName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 2,
   },
   jobTitle: {
     fontSize: 15,
-    color: "#444",
+    color: '#444',
   },
   periodLocationContainer: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   periodText: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
     marginBottom: 2,
   },
   locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   locationText: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   durationText: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   projectItem: {
     marginBottom: 18,
   },
   projectHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 6,
   },
   projectName: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: '600',
+    color: '#333',
     flex: 1,
     marginRight: 8,
   },
   projectPeriod: {
     fontSize: 14,
-    color: "#666",
+    color: '#666',
   },
   projectDescription: {
     fontSize: 14,
-    color: "#444",
+    color: '#444',
     lineHeight: 20,
   },
   skillsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   skillItem: {
     fontSize: 15,
-    color: "#444",
+    color: '#444',
   },
   buttonContainer: {
     padding: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: "#eaeaea",
+    borderTopColor: '#eaeaea',
   },
   downloadButton: {
-    backgroundColor: "#14B6AA",
+    backgroundColor: '#14B6AA',
     borderRadius: 10,
     paddingVertical: 14,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     elevation: 2,
   },
   buttonIcon: {
     marginRight: 8,
   },
   buttonText: {
-    color: "#ffffff",
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
-})
+});
 
-export default ResumeTemplate
+export default ResumeTemplate;

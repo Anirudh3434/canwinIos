@@ -45,7 +45,7 @@ const SocialLinks = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? 40 : 0 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>

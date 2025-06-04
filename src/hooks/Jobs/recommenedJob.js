@@ -18,7 +18,6 @@ const useRecommenedJob = () => {
         console.warn('❗ No user ID found in AsyncStorage.');
         return;
       }
-      console.log('📌 User ID:', userId);
 
       // 2. Get user skills
       const skillRes = await axios.get(`${API_ENDPOINTS.SKILLS}?user_id=${userId}`);

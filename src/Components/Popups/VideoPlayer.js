@@ -1,5 +1,13 @@
 import React, { useRef, useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, SafeAreaView, StatusBar, ActivityIndicator } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  ActivityIndicator,
+} from 'react-native';
 import { WebView } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../theme/color'; // your color theme
@@ -12,7 +20,7 @@ const VideoViewer = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={Colors.bg} barStyle="dark-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -23,7 +31,7 @@ const VideoViewer = ({ route, navigation }) => {
         </Text>
         <View style={{ width: 40 }} />
       </View>
-      
+
       {/* Video Content */}
       <View style={styles.videoContainer}>
         <WebView
@@ -37,7 +45,7 @@ const VideoViewer = ({ route, navigation }) => {
           onLoadStart={() => setIsLoading(true)}
           onLoadEnd={() => setIsLoading(false)}
         />
-        
+
         {isLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary || '#0000ff'} />

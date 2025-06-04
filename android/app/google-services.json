@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "576594960088",
+    "project_id": "canwinnrojgar",
+    "storage_bucket": "canwinnrojgar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:576594960088:android:3c06137085e785960dc1ad",
+        "android_client_info": {
+          "package_name": "com.jobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "576594960088-so1u3s7b62q1hlp9shop9crsmvjmscj6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jobile",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "576594960088-9g80r1o2160i4pm4q26nu1nm0hai1d8s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQBmzS7AnfhU0cKlwQN6WTnOS993Oh4YM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "576594960088-9g80r1o2160i4pm4q26nu1nm0hai1d8s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "576594960088-dae9b81u0js82bk3v27ckso48nn6gb3v.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jobile.mrghost123"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

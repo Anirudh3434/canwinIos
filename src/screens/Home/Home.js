@@ -15,12 +15,14 @@ import {
   RefreshControl,
   ActivityIndicator,
   BackHandler,
-  ToastAndroid, // Import ToastAndroid for Android
+  PermissionsAndroid,
+  
 } from 'react-native';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Colors } from '../../theme/color';
+import messaging from '@react-native-firebase/messaging';
 import style from '../../theme/style';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { AppBar } from '@react-native-material/core';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -35,8 +37,9 @@ import JobDetailModal from './JobDetail';
 import useRecommenedJob from '../../hooks/Jobs/recommenedJob';
 import useRecentJobs from '../../hooks/Jobs/recentAddJobs';
 import JobSuccess from '../../Components/Popups/JobSuccess';
+import JobCard3 from '../../Components/Cards/JobCard3';
 
-export default function  Home() {
+export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigation = useNavigation();
   const [name, setName] = useState('');
@@ -47,6 +50,9 @@ export default function  Home() {
   const [docs, setDocs] = useState();
   const [backPressCount, setBackPressCount] = useState(0);
   const dispatch = useDispatch();
+  const [flag, setFlag] = useState(true);
+  const [fcmToken, setFcmToken] = useState(null);
+  const initialRender = useRef(true);
 
   const closeJobDetail = () => {
     setJobDetailModalVisible(false);
@@ -67,44 +73,93 @@ export default function  Home() {
     }
   };
 
-  const backAction = () => {
-    if (jobDetailModalVisible) {
-      setJobDetailModalVisible(false);
-      return true;
+  const requestUserPermission = async () => {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
     }
 
-    if (successPop) {
-      setSuccessPop(false);
-      return true;
+    if (Platform.OS === 'android' && Platform.Version >= 33) {
+      await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
     }
+  };
 
-    if (navigation.isFocused()) {
-      BackHandler.exitApp();
-      return true;
+  const getFCMToken = async () => {
+    try {
+      const token = await messaging().getToken();
+      setFcmToken(token);
+      setFlag(false);
+      return token;
+    } catch (error) {
+      console.error('Error getting FCM token:', error);
+      return null;
     }
-
-    return false; // Ensure the default back behavior if none of the conditions are met
   };
 
   useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    if (flag) {
+      getFCMToken();
+    }
+    requestUserPermission();
+  }, []);
 
-    return () => backHandler.remove();
-  }, [backPressCount, jobDetailModalVisible, successPop, navigation]);
+  const sendFCMToken = async () => {
+    try {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      console.log('fcmToken', fcmToken);
+      if (storedUserId) {
+        const response = await axios.put(API_ENDPOINTS.ADD_FCM, {
+          user_id: +storedUserId,
+          fcm_token: fcmToken,
+        });
+      }
+    } catch (error) {
+      console.error('Error sending FCM token:', error);
+    }
+  };
 
   useEffect(() => {
-    fetchUserIdAndDetail();
+    if (fcmToken) {
+      sendFCMToken();
+    }
+  }, [fcmToken]);
 
-    // Better implementation of interval with cleanup
-    const interval = setInterval(() => {
-      fetchUserIdAndDetail();
-    }, 3000); // Adjusted interval to 3 seconds
+  useFocusEffect(
+    useCallback(() => {
+      // Skip the initial render to avoid double loading
+      if (initialRender.current) {
+        initialRender.current = false;
+        return;
+      }
 
-    // Cleanup interval when component unmounts
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+      // Refresh data when screen is focused
+      const refreshData = async () => {
+        setRefreshing(true);
+        try {
+          await Promise.all([
+            fetchUserIdAndDetail(),
+            refetchRecommendedJobs && refetchRecommendedJobs(),
+            refetchRecentJobs && refetchRecentJobs(),
+          ]);
+        } catch (error) {
+          console.error('Error refreshing data on focus:', error);
+        } finally {
+          setRefreshing(false);
+        }
+      };
+
+      refreshData();
+
+      return () => {
+        // Cleanup if needed
+      };
+    }, [])
+  );
+
+ 
 
   const handleSuccess = () => {
     setSuccessPop(true);
@@ -116,8 +171,6 @@ export default function  Home() {
     recommendedError,
     refetch: refetchRecommendedJobs,
   } = useRecommenedJob();
-
-
 
   const { recentJobs, recentLoading, recentError, refetch: refetchRecentJobs } = useRecentJobs();
 
@@ -142,6 +195,11 @@ export default function  Home() {
     }
   }, [refetchRecommendedJobs, refetchRecentJobs]);
 
+  // Initial data load
+  useEffect(() => {
+    onRefresh();
+  }, []);
+
   const handleJobPress = (job) => {
     setSelectedJob(job);
     setJobDetailModalVisible(true);
@@ -149,18 +207,18 @@ export default function  Home() {
 
   // Navigate to full job list views
   const navigateToAllRecommendedJobs = () => {
-    navigation.navigate('recommendedJobsList', { jobs: 'recommendedJobs' });
+    navigation.navigate('recommendedJobsList', { job: 'recommendedJobs' });
   };
 
   const navigateToAllRecentJobs = () => {
-    navigation.navigate('recommendedJobsList', { jobs: 'recentJobs' });
+    navigation.navigate('recommendedJobsList', { job: 'recentJobs' });
   };
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
       {successPop && <JobSuccess setSuccessPop={setSuccessPop} />}
 
-      <StatusBar backgroundColor={Colors.bg} translucent={false} barStyle={'dark-content'} />
+      <StatusBar color={Colors.bg} translucent={false} barStyle={'dark-content'} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : null}>
         {/* Main Content */}
         <View style={{ flex: 1 }}>
@@ -226,12 +284,15 @@ export default function  Home() {
                 </View>
               }
               trailing={
-                <View style={{ flexDirection: 'row' }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Notification')}
+                  style={{ flexDirection: 'row' }}
+                >
                   <Image
                     style={{ width: 22, height: 22, objectFit: 'contain', marginRight: 0 }}
                     source={require('../../../assets/image/notification.png')}
                   />
-                </View>
+                </TouchableOpacity>
               }
             />
           )}
@@ -264,7 +325,7 @@ export default function  Home() {
                     <Image
                       style={styles.cardImage}
                       source={
-                        docs?.pp_url ==''
+                        !docs?.pp_url == ''
                           ? { uri: docs.pp_url }
                           : require('../../../assets/image/profileIcon.png')
                       }
@@ -379,50 +440,7 @@ export default function  Home() {
                 >
                   {limitedRecommendedJobs?.length > 0 ? (
                     limitedRecommendedJobs.map((job, index) => (
-                      <TouchableOpacity
-                        key={`recommended-${index}`}
-                        onPress={() => handleJobPress(job)}
-                      >
-                        <View style={styles.jobCardContainer}>
-                          <View style={styles.jobCard}>
-                            <View style={styles.jobCardHeader}>
-                              {job.company_logo ? (
-                                <Image
-                                  source={{ uri: job.company_logo }}
-                                  resizeMode="stretch"
-                                  style={styles.jobCardLogo}
-                                />
-                              ) : (
-                                <ProfileImageFallback
-                                  size={40}
-                                  fontSize={15}
-                                  fullname={job.company_name}
-                                />
-                              )}
-                            </View>
-
-                            <View style={styles.jobCardContent}>
-                              <View>
-                                <Text style={[style.s16, { color: Colors.active }]}>
-                                  {job.job_title?.length > 20
-                                    ? job.job_title.slice(0, 20) + '...'
-                                    : job.job_title}
-                                </Text>
-                                <Text>{job.company_name.toLowerCase()}</Text>
-                              </View>
-
-                              <View style={styles.jobCardLocation}>
-                                <Icon name="location" size={12} color="#9A9A9A" />
-                                <Text style={styles.jobCardLocationText}>{job.job_location}</Text>
-                              </View>
-                              <View style={styles.jobCardLocation}>
-                                <Icon name="time-outline" size={12} color="#9A9A9A" />
-                                <Text style={styles.jobCardLocationText}>{job.daysAgo}</Text>
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
+                      <JobCard3 job={job} index={index} handleJobPress={handleJobPress} />
                     ))
                   ) : (
                     <View style={styles.emptyJobsContainer}>
@@ -466,47 +484,7 @@ export default function  Home() {
                 >
                   {limitedRecentJobs?.length > 0 ? (
                     limitedRecentJobs.map((job, index) => (
-                      <TouchableOpacity key={`recent-${index}`} onPress={() => handleJobPress(job)}>
-                        <View style={styles.jobCardContainer}>
-                          <View style={styles.jobCard}>
-                            <View style={styles.jobCardHeader}>
-                              {job.company_logo ? (
-                                <Image
-                                  source={{ uri: job.company_logo }}
-                                  resizeMode="stretch"
-                                  style={styles.jobCardLogo}
-                                />
-                              ) : (
-                                <ProfileImageFallback
-                                  size={40}
-                                  fontSize={15}
-                                  fullname={job.company_name}
-                                />
-                              )}
-                            </View>
-
-                            <View style={styles.jobCardContent}>
-                              <View>
-                                <Text style={[style.s16, { color: Colors.active }]}>
-                                  {job.job_title?.length > 20
-                                    ? job.job_title.slice(0, 20) + '...'
-                                    : job.job_title}
-                                </Text>
-                                <Text>{job.company_name}</Text>
-                              </View>
-
-                              <View style={styles.jobCardLocation}>
-                                <Icon name="location" size={12} color="#9A9A9A" />
-                                <Text style={styles.jobCardLocationText}>{job.job_location}</Text>
-                              </View>
-                              <View style={styles.jobCardLocation}>
-                                <Icon name="time-outline" size={12} color="#9A9A9A" />
-                                <Text style={styles.jobCardLocationText}>{job.daysAgo}</Text>
-                              </View>
-                            </View>
-                          </View>
-                        </View>
-                      </TouchableOpacity>
+                      <JobCard3 job={job} index={index} handleJobPress={handleJobPress} />
                     ))
                   ) : (
                     <View style={styles.emptyJobsContainer}>

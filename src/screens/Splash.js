@@ -12,7 +12,7 @@ export default function Splash() {
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: '#ffffff', flex: 1 }]}>
-      <StatusBar translucent={true} backgroundColor="#ffffff" barStyle="dark-content" />
+      <StatusBar translucent={true} backgroundColor={Colors.bg} barStyle="dark-content" />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Image
           source={require('../../assets/image/canwinLogo3x.png')}

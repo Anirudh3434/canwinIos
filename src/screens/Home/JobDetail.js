@@ -15,10 +15,11 @@ import { Colors } from '../../theme/color';
 import DocumentPicker from 'react-native-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { useRoute } from '@react-navigation/native';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 import RNFS from 'react-native-fs';
 
-const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
+const JobDetailModal = ({ visible, onClose, job, onSuccess, IsSaved, isSaveList, onRefetch }) => {
   // State variables
   const [userId, setUserId] = useState(null);
   const [userData, setUserData] = useState({});
@@ -30,6 +31,11 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isResume, setIsResume] = useState(false);
   const [resumeFileName, setResumeFileName] = useState('');
+  const [save, setSave] = useState(IsSaved || false);
+  const route = useRoute();
+  const [applicationCount, setApplicationCount] = useState(0);
+
+  const jobDetail = route.params;
 
   // Fetch user data
   const fetchUserId = async () => {
@@ -47,9 +53,10 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
     if (!userId) return;
     try {
       const response = await axios.get(`${API_ENDPOINTS.DOCS}?user_id=${userId}`);
-      
+
       if (response.data.status === 'success' && response.data.data) {
-        const hasResume = response.data.data.resume_file_name && response.data.data.resume_file_name !== '';
+        const hasResume =
+          response.data.data.resume_file_name && response.data.data.resume_file_name !== '';
         setIsResume(hasResume);
         if (hasResume) {
           setResumeFileName(response.data.data.resume_file_name);
@@ -89,6 +96,26 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
       setIsLoading(false);
     }
   };
+
+  const FetchApplicationCount = async () => {
+    console.log('callinng ......');
+
+    try {
+      const response = await axios.get(API_ENDPOINTS.APPLICATION_COUNT, {
+        params: {
+          job_id: job?.job_id,
+        },
+      });
+      setApplicationCount(response.data.count);
+      console.log('response', response.data);
+    } catch (error) {
+      console.log('Error fetching application count:', error);
+    }
+  };
+
+  useEffect(() => {
+    FetchApplicationCount();
+  }, [job?.job_id]);
 
   // Use effect hooks
   useEffect(() => {
@@ -132,7 +159,7 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
 
   const uploadDocument = async (data, type) => {
     if (!userId) return;
-    
+
     const payload = {
       user_id: userId,
       type: type,
@@ -150,7 +177,7 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
       });
 
       console.log('Upload response:', response.data);
-      
+
       // Update resume status after successful upload
       if (response.data.status === 'success') {
         setIsResume(true);
@@ -168,28 +195,38 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
       Alert.alert('Error', 'User not logged in. Please log in to apply.');
       return;
     }
-    
+
     if (!isResume && !resume) {
       Alert.alert('Resume Required', 'Please upload your resume to apply for this job.');
       return;
     }
-    
-    if (!job || !job.job_id) {
+
+    if (!job || !job?.job_id) {
       Alert.alert('Error', 'Job information is missing. Please try again later.');
       return;
     }
-    
+
     try {
       setIsLoading(true);
       const response = await axios.post(API_ENDPOINTS.JOB_APPLY, {
         user_id: userId,
-        job_id: job.job_id,
+        job_id: job?.job_id,
+        application_status: 'Applied',
       });
-      
-      if (response.data.status === 'success') {
 
-        setShowApplicationForm(false);
-        onClose();
+      console.log('response', response);
+
+      if (response.data.status === 'success') {
+        const changeStatus = await axios.post(API_ENDPOINTS.APPLICATION_LOGS, {
+          application_id: response.data.application_id,
+          new_status: 'Applied',
+        });
+
+        if (changeStatus.data.status === 'success') {
+          setShowApplicationForm(false);
+          onClose();
+        }
+
         if (onSuccess && typeof onSuccess === 'function') {
           onSuccess();
         }
@@ -222,7 +259,11 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
         <TouchableOpacity style={styles.fileInput} onPress={pickDocument}>
           <Ionicons name="document-attach-outline" size={24} color={Colors.primary} />
           <Text style={styles.fileInputText}>
-            {resume ? resume.name : isResume ? resumeFileName || 'Resume Available' : 'Upload Resume'}
+            {resume
+              ? resume.name
+              : isResume
+              ? resumeFileName || 'Resume Available'
+              : 'Upload Resume'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -230,17 +271,17 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
   };
 
   const shareJob = async () => {
-    if (!job || !job.job_id) {
+    if (!job || !job?.job_id) {
       Alert.alert('Error', 'Job information is missing. Cannot share at this time.');
       return;
     }
-    
-    const jobId = job.job_id;
-    const deepLink = `https://canwinn.abacasys.com/job/${jobId}`;
+
+    const jobId = job?.job_id;
+    const deepLink = `https://canwinn.abacasys.com/job?job_id=${jobId}`;
 
     try {
       await Share.share({
-        message: `Check out this job opportunity: ${job.job_title} at ${job.company_name}\n${deepLink}`,
+        message: `Check out this job opportunity: ${job?.job_title} at ${job?.company_name}\n${deepLink}`,
       });
     } catch (error) {
       console.error('Error sharing job:', error);
@@ -253,41 +294,77 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
       Alert.alert('Error', 'Please log in to save jobs.');
       return;
     }
-    
-    if (!job || !job.job_id) {
+
+    if (!job || !job?.job_id) {
       Alert.alert('Error', 'Job information is missing. Cannot save at this time.');
       return;
     }
-    
+
     try {
-      const response = await axios.post(API_ENDPOINTS.SAVE_JOBS, {
-        user_id: userId,
-        job_id: job.job_id,
-      });
-      if (response.data.status === 'success') {
-        Alert.alert('Success', 'Job saved successfully');
+      if (!save) {
+        // Save the job
+        const response = await axios.post(API_ENDPOINTS.SAVE_JOBS, {
+          user_id: userId,
+          job_id: job?.job_id,
+        });
+
+        console.log('Save job response:', response.data);
+
+        if (
+          response.data.status === 'success' &&
+          response.data.message === 'Data inserted successfully'
+        ) {
+          setSave(true);
+          Alert.alert('Success', 'Job saved successfully');
+        } else if (response.data.message === 'You have already saved this job') {
+          Alert.alert('Info', 'Job already saved');
+        } else {
+          Alert.alert('Error', response.data.message || 'Failed to save job');
+        }
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to save job');
+        console.log(userId, +job?.job_id);
+        const payload = {
+          user_id: userId,
+          job_id: +job?.job_id,
+        };
+
+        console.log(payload);
+        const response = await axios.delete(API_ENDPOINTS.UNSAVED_JOBS, {
+          data: payload,
+        });
+
+        console.log('Unsave job response:', response.data);
+
+        if (response.data.status === 'success') {
+          Alert.alert('Success', 'Job unsaved successfully');
+          setSave(false);
+          if (isSaveList) {
+            onRefetch();
+            onClose();
+          }
+        } else {
+          Alert.alert('Error', response.data.message || 'Failed to unsave job');
+        }
       }
     } catch (error) {
-      console.error('Error saving job:', error);
-      Alert.alert('Error', 'Failed to save job. Please try again.');
+      console.error('Error saving/unsaving job:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
 
   // Safely parse qualifications and skills
-  const qualifications = 
-    job?.job_requirments && typeof job.job_requirments === 'string' && job.job_requirments !== '' 
-      ? job.job_requirments.split(',') 
+  const qualifications =
+    job?.job_requirments && typeof job.job_requirments === 'string' && job.job_requirments !== ''
+      ? job.job_requirments.split(',')
       : [];
 
-  const skills = 
-    job?.job_skills && typeof job.job_skills === 'string' && job.job_skills !== '' 
-      ? job.job_skills.split(',') 
+  const skills =
+    job?.job_skills && typeof job.job_skills === 'string' && job.job_skills !== ''
+      ? job.job_skills.split(',')
       : [];
-      
+
   // Handle education safely
-  const educationItems = 
+  const educationItems =
     job?.education && typeof job.education === 'string' && job.education !== ''
       ? job.education.split(',')
       : [];
@@ -319,8 +396,15 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
               <Ionicons name="close" size={24} color="black" />
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity onPress={handleSaveJob} style={{ backgroundColor: 'white', borderRadius: 50, padding: 8 }}>
-                <Ionicons name="bookmark-outline" size={24} color={Colors.primary} />
+              <TouchableOpacity
+                onPress={handleSaveJob}
+                style={{ backgroundColor: 'white', borderRadius: 50, padding: 8 }}
+              >
+                <Ionicons
+                  name={save ? 'bookmark' : 'bookmark-outline'}
+                  size={24}
+                  color={Colors.primary}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={shareJob}
@@ -347,15 +431,10 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
             </View>
 
             <View style={styles.jobDetailHeader}>
-              <Image
-                source={{ uri: job?.company_logo}}
-                style={styles.jobDetailImage}
-              />
+              <Image source={{ uri: job?.company_logo }} style={styles.jobDetailImage} />
               <View style={styles.jobTitleContainer}>
                 <Text style={styles.jobCompany}>{job?.company_name || 'Company'}</Text>
-                <Text style={styles.jobPosition}>
-                  {job?.job_title || 'Position'}
-                </Text>
+                <Text style={styles.jobPosition}>{job?.job_title || 'Position'}</Text>
               </View>
             </View>
 
@@ -387,6 +466,16 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.sectionTitle}>Job Detail</Text>
               <View style={styles.infoContainer}>
+                <View style={styles.infoItem}>
+                  <View style={styles.infoIcon}>
+                    <Ionicons name="people-outline" size={22} color="#7C7C7C" />
+                  </View>
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoLabel}>Applicant Applied</Text>
+                    <Text style={styles.infoValue}>{applicationCount}</Text>
+                  </View>
+                </View>
+
                 <View style={styles.infoItem}>
                   <View style={styles.infoIcon}>
                     <Ionicons name="cash-outline" size={22} color="#7C7C7C" />
@@ -493,19 +582,11 @@ const JobDetailModal = ({ visible, onClose, job, onSuccess }) => {
                   <Text style={styles.inputText}>{name || 'Not available'}</Text>
                 </View>
                 <View style={[styles.inputContainer]}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={24}
-                    color="#D5D9DF"
-                  />
+                  <Ionicons name="mail-outline" size={24} color="#D5D9DF" />
                   <Text style={styles.inputText}>{email || 'Not available'}</Text>
                 </View>
                 <View style={[styles.inputContainer]}>
-                  <Ionicons
-                    name="call-outline"
-                    size={24}
-                    color="#D5D9DF"
-                  />
+                  <Ionicons name="call-outline" size={24} color="#D5D9DF" />
                   <Text style={styles.inputText}>{mobile || 'Not available'}</Text>
                 </View>
               </View>
@@ -573,7 +654,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
     padding: 10,
-    gap: 20
+    gap: 20,
   },
   jobTitleContainer: {
     flex: 1,
@@ -637,6 +718,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     backgroundColor: '#DFFAF6',
   },
+
   skillText: {
     fontSize: 12,
     fontFamily: 'Poppins-Regular',

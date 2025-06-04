@@ -4,8 +4,8 @@ import searchHistoryReducer from './slice/SearchHistorySlice';
 import sidebarReducer from './slice/sideBarSlice';
 import RoleReducer from './slice/RoleSlice';
 import CompanyDetailSlice from './slice/CompanyDetail';
-import  socialReducer  from './slice/socialLinkSlice';
-import { Social } from 'react-native-share';
+import socialReducer from './slice/socialLinkSlice';
+import newMessageSlice from './slice/NewMessageSlice';
 
 const store = configureStore({
   reducer: {
@@ -14,8 +14,8 @@ const store = configureStore({
     sidebar: sidebarReducer,
     role: RoleReducer,
     companyDetail: CompanyDetailSlice,
-    socialLink : socialReducer
-    
+    socialLink: socialReducer,
+    newMessage: newMessageSlice,
   },
 });
 

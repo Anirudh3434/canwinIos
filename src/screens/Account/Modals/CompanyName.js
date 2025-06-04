@@ -40,11 +40,11 @@ const CompanyProfile = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-   const [flag, setFlag] = useState(true);
-  
-   console.log('flag', flag)
-  
-   useEffect(() => {
+  const [flag, setFlag] = useState(true);
+
+  console.log('flag', flag);
+
+  useEffect(() => {
     if (flag && data?.data.country && countryList.length > 0) {
       const foundCountry = countryList.find((c) => c.label === data.data.country);
       if (foundCountry) {
@@ -52,8 +52,7 @@ const CompanyProfile = () => {
       }
     }
   }, [countryList]);
-  
-  
+
   useEffect(() => {
     if (flag && data?.data.state && stateList.length > 0) {
       const foundState = stateList.find((s) => s.label === data.data.state);
@@ -192,7 +191,7 @@ const CompanyProfile = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>

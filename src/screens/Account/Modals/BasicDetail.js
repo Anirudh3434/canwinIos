@@ -30,9 +30,12 @@ const BasicDetail = () => {
   const [mobileNumber, setMobileNumber] = useState(
     data?.mobile_number?.replace(/^(\+91|91)/, '') || ''
   );
-  
   const [email, setEmail] = useState(data?.email || '');
   const [availability, setAvailability] = useState(data?.availability_to_join || '');
+  
+  // Experience fields
+  const [experienceYears, setExperienceYears] = useState(data?.ex_years || '');
+  const [experienceMonths, setExperienceMonths] = useState(data?.ex_months || '');
 
   // Error state variables
   const [mobileNumberError, setMobileNumberError] = useState('');
@@ -42,6 +45,7 @@ const BasicDetail = () => {
   const [stateError, setStateError] = useState('');
   const [cityError, setCityError] = useState('');
   const [availabilityError, setAvailabilityError] = useState('');
+  const [experienceError, setExperienceError] = useState('');
 
   // API data states
   const [countries, setCountries] = useState([]);
@@ -55,37 +59,32 @@ const BasicDetail = () => {
   const [stateOpen, setStateOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
   const [availabilityOpen, setAvailabilityOpen] = useState(false);
+  const [experienceYearsOpen, setExperienceYearsOpen] = useState(false);
+  const [experienceMonthsOpen, setExperienceMonthsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [flag, setFlag] = useState(true);
 
- const [flag, setFlag] = useState(true);
+  console.log('flag', flag);
 
- console.log('flag', flag)
-
- useEffect(() => {
-  if (flag && data?.current_country && countries.length > 0) {
-    const foundCountry = countries.find((c) => c.label === data.current_country);
-    if (foundCountry) {
-      setCountry(foundCountry.value);
+  useEffect(() => {
+    if (flag && data?.current_country && countries.length > 0) {
+      const foundCountry = countries.find((c) => c.label === data.current_country);
+      if (foundCountry) {
+        setCountry(foundCountry.value);
+      }
     }
-  }
-}, [countries]);
+  }, [countries]);
 
-
-useEffect(() => {
-  if (flag && data?.current_state && states.length > 0) {
-    const foundState = states.find((s) => s.label === data.current_state);
-    if (foundState) {
-      setState(foundState.value);
-      setFlag(false); // Set flag to false only after setting both
+  useEffect(() => {
+    if (flag && data?.current_state && states.length > 0) {
+      const foundState = states.find((s) => s.label === data.current_state);
+      if (foundState) {
+        setState(foundState.value);
+        setFlag(false); // Set flag to false only after setting both
+      }
     }
-  }
-}, [states]);
-
-
-  
-
-
+  }, [states]);
 
   // Hardcoded dropdown items for work status and availability
   const [workStatusItems] = useState([
@@ -103,6 +102,46 @@ useEffect(() => {
     { label: '2 Months', value: '2 Months' },
     { label: '3 Months', value: '3 Months' },
     { label: 'More than 3 Months', value: 'More than 3 Months' },
+  ]);
+
+  // Experience dropdown items
+  const [experienceYearsItems] = useState([
+    { label: '0 Years', value: '0' },
+    { label: '1 Year', value: '1' },
+    { label: '2 Years', value: '2' },
+    { label: '3 Years', value: '3' },
+    { label: '4 Years', value: '4' },
+    { label: '5 Years', value: '5' },
+    { label: '6 Years', value: '6' },
+    { label: '7 Years', value: '7' },
+    { label: '8 Years', value: '8' },
+    { label: '9 Years', value: '9' },
+    { label: '10 Years', value: '10' },
+    { label: '11 Years', value: '11' },
+    { label: '12 Years', value: '12' },
+    { label: '13 Years', value: '13' },
+    { label: '14 Years', value: '14' },
+    { label: '15 Years', value: '15' },
+    { label: '16 Years', value: '16' },
+    { label: '17 Years', value: '17' },
+    { label: '18 Years', value: '18' },
+    { label: '19 Years', value: '19' },
+    { label: '20+ Years', value: '20+' },
+  ]);
+
+  const [experienceMonthsItems] = useState([
+    { label: '0 Months', value: '0' },
+    { label: '1 Month', value: '1' },
+    { label: '2 Months', value: '2' },
+    { label: '3 Months', value: '3' },
+    { label: '4 Months', value: '4' },
+    { label: '5 Months', value: '5' },
+    { label: '6 Months', value: '6' },
+    { label: '7 Months', value: '7' },
+    { label: '8 Months', value: '8' },
+    { label: '9 Months', value: '9' },
+    { label: '10 Months', value: '10' },
+    { label: '11 Months', value: '11' },
   ]);
 
   console.log(data?.current_city);
@@ -205,6 +244,17 @@ useEffect(() => {
       setAvailabilityError('');
     }
 
+    // Experience validation
+    if (experienceYears === '' && experienceMonths === '') {
+      setExperienceError('Experience is required');
+      isValid = false;
+    } else if (experienceYears === '0' && experienceMonths === '0') {
+      setExperienceError('Experience must be greater than 0');
+      isValid = false;
+    } else {
+      setExperienceError('');
+    }
+
     if (!mobileNumber?.trim()) {
       setMobileNumberError('Mobile number is required');
       isValid = false;
@@ -213,19 +263,6 @@ useEffect(() => {
       isValid = false;
     } else {
       setMobileNumberError('');
-    }
-
-    if (!email?.trim()) {
-      setEmailError('Email is required');
-      isValid = false;
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setEmailError('Please enter a valid email address');
-        isValid = false;
-      } else {
-        setEmailError('');
-      }
     }
 
     return isValid;
@@ -247,6 +284,8 @@ useEffect(() => {
     setStateOpen(false);
     setCityOpen(false);
     setAvailabilityOpen(false);
+    setExperienceYearsOpen(false);
+    setExperienceMonthsOpen(false);
     setOpen(true);
   }, []);
 
@@ -264,6 +303,8 @@ useEffect(() => {
       mobile_no: mobileNumber,
       email: email,
       availability_to_join: availability,
+      experience_years: experienceYears || '0',
+      experience_months: experienceMonths || '0',
     };
 
     console.log('Params:', params);
@@ -293,7 +334,7 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -316,7 +357,7 @@ useEffect(() => {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Work Status Dropdown */}
-        <View style={[styles.inputContainer, { zIndex: 500 }]}>
+        <View style={[styles.inputContainer, { zIndex: 700 }]}>
           <Text style={styles.label}>Work Status</Text>
           <DropDownPicker
             listMode="SCROLLVIEW"
@@ -337,10 +378,69 @@ useEffect(() => {
             ]}
             listItemContainerStyle={styles.listItemContainerStyle}
             listItemLabelStyle={styles.listItemLabelStyle}
-            zIndex={500}
+            zIndex={700}
             zIndexInverse={1000}
           />
           {workStatusError && <Text style={styles.errorText}>{workStatusError}</Text>}
+        </View>
+
+        {/* Experience Section */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Total Experience</Text>
+          <View style={styles.experienceContainer}>
+            {/* Years Dropdown */}
+            <View style={[styles.experienceDropdownContainer, { zIndex: 600 }]}>
+              <DropDownPicker
+                listMode="SCROLLVIEW"
+                scrollViewProps={{ nestedScrollEnabled: true }}
+                open={experienceYearsOpen}
+                value={experienceYears}
+                items={experienceYearsItems}
+                setOpen={(open) =>
+                  open ? onDropdownOpen(setExperienceYearsOpen) : setExperienceYearsOpen(false)
+                }
+                setValue={setExperienceYears}
+                placeholder="Years"
+                placeholderStyle={styles.placeholderStyle}
+                style={[styles.dropdownStyle, experienceError && styles.dropdownError]}
+                dropDownContainerStyle={[
+                  styles.dropDownContainerStyle,
+                  { height: getDropdownHeight(experienceYearsOpen, experienceYearsItems.length) },
+                ]}
+                listItemContainerStyle={styles.listItemContainerStyle}
+                listItemLabelStyle={styles.listItemLabelStyle}
+                zIndex={600}
+                zIndexInverse={1000}
+              />
+            </View>
+
+            {/* Months Dropdown */}
+            <View style={[styles.experienceDropdownContainer, { zIndex: 500 }]}>
+              <DropDownPicker
+                listMode="SCROLLVIEW"
+                scrollViewProps={{ nestedScrollEnabled: true }}
+                open={experienceMonthsOpen}
+                value={experienceMonths}
+                items={experienceMonthsItems}
+                setOpen={(open) =>
+                  open ? onDropdownOpen(setExperienceMonthsOpen) : setExperienceMonthsOpen(false)
+                }
+                setValue={setExperienceMonths}
+                placeholder="Months"
+                placeholderStyle={styles.placeholderStyle}
+                style={[styles.dropdownStyle, experienceError && styles.dropdownError]}
+                dropDownContainerStyle={[
+                  styles.dropDownContainerStyle,
+                  { height: getDropdownHeight(experienceMonthsOpen, experienceMonthsItems.length) },
+                ]}
+                listItemContainerStyle={styles.listItemContainerStyle}
+                listItemLabelStyle={styles.listItemLabelStyle}
+                zIndex={500}
+                zIndexInverse={1000}
+              />
+            </View>
+          </View>
+          {experienceError && <Text style={styles.errorText}>{experienceError}</Text>}
         </View>
 
         {/* Country Dropdown */}
@@ -552,6 +652,13 @@ const styles = StyleSheet.create({
     padding: 15,
     fontSize: 16,
     backgroundColor: '#fff',
+  },
+  experienceContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  experienceDropdownContainer: {
+    flex: 1,
   },
   dropdownStyle: {
     borderColor: '#D5D9DF',

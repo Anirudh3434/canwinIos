@@ -190,22 +190,18 @@ export default function Otp() {
           });
 
           if (response.data.status === 'success') {
-
             try {
               const updateNumber = axios.post(API_ENDPOINTS.BASIC_DETAILS, {
                 user_id: userId,
                 mobile_no: phoneNumber,
-              })
+              });
 
-              if(updateNumber.data.status === 'success') {
+              if (updateNumber.data.status === 'success') {
                 console.log('Mobile number updated successfully');
                 navigation.navigate('Validate');
               }
-
             } catch (error) {
               console.error('Error updating mobile number:', error);
-            
-              
             }
 
             navigation.navigate('Validate');

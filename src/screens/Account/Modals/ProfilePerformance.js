@@ -40,18 +40,18 @@ const ProfilePerformance = () => {
     },
   ];
 
-     const backAction = () => {
-       if (navigation.isFocused()) {
-         navigation.navigate('MyTabs');
-         return true;
-       }
-     };
-   
-     useEffect(() => {
-       const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-   
-       return () => backHandler.remove();
-     }, [navigation]);
+  const backAction = () => {
+    if (navigation.isFocused()) {
+      navigation.navigate('MyTabs');
+      return true;
+    }
+  };
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   return (
     <ScrollView style={styles.container}>

@@ -8,7 +8,7 @@ import {
   FlatList,
   Dimensions,
   ActivityIndicator,
-  Platform
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -18,73 +18,13 @@ import { API_ENDPOINTS } from '../api/apiConfig';
 import ProfileImageFallback from './profileImageFallback';
 import axios from 'axios';
 
-// Navigation items based on role
-const getNavItems = (roleId) => {
-  if (roleId === '1') {
-    return [
-      {
-        id: 1,
-        name: 'Search Jobs',
-        icon: require('../../assets/image/searchJob.png'),
-        route: 'Search',
-      },
-      {
-        id: 2,
-        name: 'Recommended jobs',
-        icon: require('../../assets/image/recommend.png'),
-        route: 'recommendedJobsList',
-        type: 'recommended',
-      },
-      { id: 3, name: 'Saved jobs', icon: require('../../assets/image/saveJob.png'), route: 'SaveJob' },
-      {
-        id: 4,
-        name: 'Settings',
-        icon: require('../../assets/image/setting.png'),
-        route: 'setting',
-      },
-      { id: 5, name: 'About Us', icon: require('../../assets/image/AboutUs.png'), route: '' },
-      {
-        id: 6,
-        name: 'Write to us',
-        icon: require('../../assets/image/writeToUs.png'),
-        route: '',
-      },
-    ];
-  } else {
-    return [
-      {
-        id: 1,
-        name: 'Manage Job Listing',
-        icon: require('../../assets/image/filter.png'),
-        route: 'Manage Job Listing',
-      },
-      {
-        id: 2,
-        name: 'Application Received',
-        icon: require('../../assets/image/recommend.png'),
-        route: '',
-      },
-      {
-        id: 3,
-        name: 'Interview Scheduler',
-        icon: require('../../assets/image/schedule.png'),
-        route: '',
-      },
-      {
-        id: 4,
-        name: 'Settings',
-        icon: require('../../assets/image/setting.png'),
-        route: 'setting',
-      },
-    ];
-  }
-};
-
 // Skeleton loading component
 const SkeletonLoading = () => {
   // Create placeholder items for navigation menu
-  const placeholderItems = Array(5).fill(0).map((_, index) => ({ id: index }));
-  
+  const placeholderItems = Array(5)
+    .fill(0)
+    .map((_, index) => ({ id: index }));
+
   return (
     <View style={styles.container}>
       <View style={[styles.sidebar, Platform.OS === 'ios' && styles.sidebarIOS]}>
@@ -99,24 +39,19 @@ const SkeletonLoading = () => {
             <View style={[styles.arrowIcon, styles.skeleton]} />
           </View>
         </View>
-        
+
         <View style={styles.divider} />
-        
+
         {/* Skeleton Navigation Items */}
         <View style={styles.navList}>
-          {placeholderItems.map(item => (
+          {placeholderItems.map((item) => (
             <View key={item.id} style={styles.item}>
               <View style={[styles.itemIcon, styles.skeleton]} />
               <View style={[styles.skeletonText, { width: 150, height: 16 }]} />
             </View>
           ))}
         </View>
-        
-        {/* Skeleton Logout Button */}
-        <View style={styles.logoutContainer}>
-          <View style={[styles.logoutButton, styles.skeleton]} />
-        </View>
-        
+
         <View style={styles.divider} />
       </View>
     </View>
@@ -125,7 +60,7 @@ const SkeletonLoading = () => {
 
 // Memoized NavItem component for better performance
 const NavItem = memo(({ item, onItemPress }) => (
-  <TouchableOpacity style={styles.item} onPress={() => onItemPress(item.route, item.type)}>
+  <TouchableOpacity style={styles.item} onPress={() => onItemPress(item)}>
     <Image source={item.icon} style={styles.itemIcon} />
     <Text style={styles.itemText}>{item.name}</Text>
   </TouchableOpacity>
@@ -135,25 +70,17 @@ const NavItem = memo(({ item, onItemPress }) => (
 const ProfileSection = memo(({ name, companyName, roleId, profileUrl, onClose }) => (
   <View style={styles.profileSection}>
     {profileUrl ? (
-      <Image
-        source={{ uri: profileUrl }}
-        style={styles.profileImage}
-      />
+      <Image source={{ uri: profileUrl }} style={styles.profileImage} />
     ) : (
       <ProfileImageFallback fullname={name} size={45} fontSize={20} />
     )}
     <View style={styles.profileDetails}>
       <View>
         <Text style={styles.profileName}>{name}</Text>
-        {roleId === '2' && companyName && (
-          <Text style={styles.companyName}>{companyName}</Text>
-        )}
+        {roleId === '2' && companyName && <Text style={styles.companyName}>{companyName}</Text>}
       </View>
       <TouchableOpacity onPress={onClose}>
-        <Image
-          source={require('../../assets/image/arrow-right.png')}
-          style={styles.arrowIcon}
-        />
+        <Image source={require('../../assets/image/arrow-right.png')} style={styles.arrowIcon} />
       </TouchableOpacity>
     </View>
   </View>
@@ -165,10 +92,113 @@ const Sidebar = () => {
     name: '',
     roleId: null,
     companyName: '',
-    profileUrl: null
+    profileUrl: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch();
+
+  // Memoized handlers for better performance
+  const handleLogout = useCallback(async () => {
+    try {
+      await AsyncStorage.multiRemove(['userId', 'lastTab', 'roleId']);
+      dispatch(toggleSidebar());
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  }, [dispatch, navigation]);
+
+  // Navigation items based on role - moved inside component to access handleLogout
+  const getNavItems = useCallback((roleId) => {
+    if (roleId === '1') {
+      return [
+        {
+          id: 1,
+          name: 'Search Jobs',
+          icon: require('../../assets/image/searchJob.png'),
+          route: 'Search',
+        },
+        {
+          id: 2,
+          name: 'Recommended jobs',
+          icon: require('../../assets/image/recommend.png'),
+          route: 'recommendedJobsList',
+          type: 'recommendedJobs',
+        },
+        {
+          id: 3,
+          name: 'Saved jobs',
+          icon: require('../../assets/image/saveJob.png'),
+          route: 'SaveJob',
+        },
+        {
+          id: 4,
+          name: 'Settings',
+          icon: require('../../assets/image/setting.png'),
+          route: 'setting',
+        },
+        {
+          id: 5,
+          name: 'About Us',
+          icon: require('../../assets/image/AboutUs.png'),
+          route: 'AboutUs',
+        },
+        {
+          id: 6,
+          name: 'Write to us',
+          icon: require('../../assets/image/writeToUs.png'),
+          route: 'WriteToUs',
+        },
+        {
+          id: 7,
+          name: 'Logout',
+          icon: require('../../assets/image/logout.png'),
+          route: '',
+          isLogout: true,
+        },
+      ];
+    } else {
+      return [
+        {
+          id: 1,
+          name: 'Manage Job Listing',
+          icon: require('../../assets/image/filter.png'),
+          route: 'Manage Job Listing',
+        },
+        {
+          id: 2,
+          name: 'Shortlisted Applicants',
+          icon: require('../../assets/image/recommend.png'),
+          route: 'ShortlistedApplicants',
+        },
+        {
+          id: 3,
+          name: 'Interview Scheduler',
+          icon: require('../../assets/image/schedule.png'),
+          route: 'InterviewSchedular',
+        },
+        {
+          id: 4,
+          name: 'Offer Letter',
+          icon: require('../../assets/image/offerLetter.png'),
+          route: 'OfferLetter',
+        },
+        {
+          id: 5,
+          name: 'Settings',
+          icon: require('../../assets/image/setting.png'),
+          route: 'setting',
+        },
+        {
+          id: 6,
+          name: 'Logout',
+          icon: require('../../assets/image/logout.png'),
+          route: '',
+          isLogout: true,
+        },
+      ];
+    }
+  }, []);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -184,21 +214,22 @@ const Sidebar = () => {
         const [introResponse, docsResponse, stepResponse] = await Promise.all([
           axios.get(`${API_ENDPOINTS.INTRODUCTION}?user_id=${storedUserId}`),
           axios.get(`${API_ENDPOINTS.DOCS}?user_id=${storedUserId}`),
-          axios.get(`${API_ENDPOINTS.STEP}?user_id=${storedUserId}`)
+          axios.get(`${API_ENDPOINTS.STEP}?user_id=${storedUserId}`),
         ]);
 
         const roleId = stepResponse.data.data.role_id.toString();
 
-        if(roleId) {
+        if (roleId) {
           await AsyncStorage.setItem('roleId', roleId);
         }
+
         const docs = docsResponse.data.data;
         const name = introResponse.data.data.full_name;
-        
+
         const newUserData = {
           name,
           roleId,
-          profileUrl: docs ? (roleId === '1' ? docs.pp_url : docs.comp_url) : null
+          profileUrl: docs ? (roleId === '1' ? docs.pp_url : docs.comp_url) : null,
         };
 
         // Only fetch company details if roleId is 2
@@ -222,56 +253,58 @@ const Sidebar = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchUserData();
   }, []);
 
-  const navItems = getNavItems(userData.roleId);
+  const handleNavigation = useCallback(
+    (item) => {
+      // Handle logout separately
+      if (item.isLogout) {
+        handleLogout();
+        return;
+      }
 
-  // Memoized handlers for better performance
-  const handleNavigation = useCallback((route, type) => {
-    if (!route) return;
-    navigation.navigate(route, { type });
-    dispatch(toggleSidebar());
-  }, [navigation, dispatch]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await AsyncStorage.multiRemove(['userId', 'lastTab']);
-      dispatch(toggleSidebar());
-      navigation.navigate('Login');
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
-  }, [dispatch, navigation]);
+      // Handle navigation for other items
+      if (item.route) {
+        const params = item.type ? { job: item.type } : undefined;
+        navigation.navigate(item.route, params);
+        dispatch(toggleSidebar());
+      }
+    },
+    [navigation, dispatch, handleLogout]
+  );
 
   const handleCloseMenu = useCallback(() => {
     dispatch(toggleSidebar());
   }, [dispatch]);
 
   // Memoized render item for FlatList
-  const renderItem = useCallback(({ item }) => (
-    <NavItem item={item} onItemPress={handleNavigation} />
-  ), [handleNavigation]);
+  const renderItem = useCallback(
+    ({ item }) => <NavItem item={item} onItemPress={handleNavigation} />,
+    [handleNavigation]
+  );
 
   // Show skeleton loading until roleId is available
   if (isLoading || userData.roleId === null) {
     return <SkeletonLoading />;
   }
 
+  const navItems = getNavItems(userData.roleId);
+
   return (
     <View style={styles.container}>
       <View style={[styles.sidebar, Platform.OS === 'ios' && styles.sidebarIOS]}>
-        <ProfileSection 
+        <ProfileSection
           name={userData.name}
           companyName={userData.companyName}
           roleId={userData.roleId}
           profileUrl={userData.profileUrl}
           onClose={handleCloseMenu}
         />
-        
+
         <View style={styles.divider} />
-        
+
         <FlatList
           data={navItems}
           renderItem={renderItem}
@@ -281,16 +314,7 @@ const Sidebar = () => {
           maxToRenderPerBatch={10}
           windowSize={5}
         />
-        
-        <View style={styles.logoutContainer}>
-          <TouchableOpacity
-            onPress={handleLogout}
-            style={styles.logoutButton}
-          >
-            <Text style={styles.logoutButtonText}>Log Out</Text>
-          </TouchableOpacity>
-        </View>
-        
+
         <View style={styles.divider} />
       </View>
     </View>
@@ -403,7 +427,7 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
     opacity: 0,
-  }
+  },
 });
 
 export default memo(Sidebar);

@@ -52,7 +52,9 @@ function RecommendedJobsList() {
   const navigation = useNavigation();
 
   // Get jobType from params with fallback to 'recommendedJobs'
-  const { jobType = 'recommendedJobs' } = route.params || {};
+  const { job } = route.params || {};
+
+  console.log('job', job);
 
   const backAction = () => {
     if (navigation.isFocused()) {
@@ -81,10 +83,12 @@ function RecommendedJobsList() {
   const [successPop, setSuccessPop] = useState(false);
 
   // Determine which data to use based on jobType
-  const jobs = jobType === 'recommendedJobs' ? recommendedJobs : recentJobs;
-  const isLoading = jobType === 'recommendedJobs' ? recommendedLoading : recentLoading;
-  const hasError = jobType === 'recommendedJobs' ? recommendedError : recentError;
-  const refetchJobs = jobType === 'recommendedJobs' ? refetchRecommendedJobs : refetchRecentJobs;
+  const jobs = job === 'recommendedJobs' ? recommendedJobs : recentJobs;
+  const isLoading = job === 'recommendedJobs' ? recommendedLoading : recentLoading;
+  const hasError = job === 'recommendedJobs' ? recommendedError : recentError;
+  const refetchJobs = job === 'recommendedJobs' ? refetchRecommendedJobs : refetchRecentJobs;
+
+  console.log('jobs', jobs);
 
   const handleSuccessPopup = () => {
     setSuccessPop(true);
@@ -132,11 +136,7 @@ function RecommendedJobsList() {
       </View>
 
       <View style={styles.ratingContainer}>
-        <Image
-          source={{ uri: item.company_logo }}
-          style={styles.jobImage}
-          resizeMode="contain"
-        />
+        <Image source={{ uri: item.company_logo }} style={styles.jobImage} resizeMode="contain" />
       </View>
     </TouchableOpacity>
   );
@@ -154,7 +154,7 @@ function RecommendedJobsList() {
     <View style={styles.emptyContainer}>
       <Ionicons name="search-outline" size={50} color="#757575" />
       <Text style={styles.emptyText}>
-        No {jobType === 'recommendedJobs' ? 'recommended' : 'recent'} jobs found
+        No {job === 'recommendedJobs' ? 'recommended' : 'recent'} jobs found
       </Text>
     </View>
   );
@@ -204,7 +204,7 @@ function RecommendedJobsList() {
 
         <View style={styles.headerText}>
           <Text style={styles.resultsText}>
-            {jobType === 'recommendedJobs' ? 'Recommended Jobs' : 'Recent Jobs'}
+            {job === 'recommendedJobs' ? 'Recommended Jobs' : 'Recent Jobs'}
           </Text>
         </View>
       </View>
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 50,
-    objectFit: 'contain'
+    objectFit: 'contain',
   },
   jobDetails: {
     flex: 1,

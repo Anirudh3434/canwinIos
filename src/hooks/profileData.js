@@ -89,7 +89,7 @@ export const useFetchProfileDetail = (id) => {
           return transformedData;
         } else {
           const errorMessage = response.data.message || `Failed to fetch ${section}`;
-          console.error(errorMessage);
+
           updateError(section, errorMessage);
           return null;
         }

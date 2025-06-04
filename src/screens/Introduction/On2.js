@@ -94,7 +94,7 @@ export default function On2() {
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
-      <StatusBar backgroundColor="transparent" translucent barStyle={'dark-content'} />
+      <StatusBar backgroundColor={Colors.bg} translucent barStyle={'dark-content'} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

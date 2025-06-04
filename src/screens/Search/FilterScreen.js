@@ -152,10 +152,10 @@ function FilterScreen({ data, SearchFilterData, filterVisible, index }) {
                   </Text>
                   {/* Show indicator if this heading has selected filters */}
                   {filterData[item] && filterData[item].length > 0 ? (
-  <View style={styles.selectedIndicator} />
-) : (
-  <View style={{ width: 8, height: 8 , marginRight: 10 }} />
-)}
+                    <View style={styles.selectedIndicator} />
+                  ) : (
+                    <View style={{ width: 8, height: 8, marginRight: 10 }} />
+                  )}
                 </TouchableOpacity>
               ))}
             </ScrollView>

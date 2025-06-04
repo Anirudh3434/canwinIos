@@ -28,20 +28,38 @@ const ProjectDetail = () => {
   const { req } = route.params || {};
   const { project } = route.params || {};
 
+  // Updated format function to ensure consistent date formatting
+  const formatDate = (date) => {
+    if (!date) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const isProgress = project?.project_status === 'In-Progress';
+
+  console.log('Project:', project);
 
   const [userID, setUserID] = useState();
   const [projectTitle, setProjectTitle] = useState(project?.project_title || '');
   const [loading, setLoading] = useState(false);
 
+  // Improve date handling by always initializing with proper date objects
   const [workFrom, setWorkFrom] = useState(project?.work_from || '');
   const [workTill, setWorkTill] = useState(project?.work_till || '');
-  const [workFromDate, setWorkFromDate] = useState(
-    project?.work_from ? convertToDate(project.work_from) : new Date()
-  );
-  const [workTillDate, setWorkTillDate] = useState(
-    project?.work_till ? convertToDate(project.work_till) : new Date()
-  );
+
+  // Improved date conversion function that handles multiple formats
+  const [workFromDate, setWorkFromDate] = useState(() => {
+    if (!project?.work_from) return new Date();
+    return convertToDate(project.work_from);
+  });
+
+  const [workTillDate, setWorkTillDate] = useState(() => {
+    if (!project?.work_till) return new Date();
+    return convertToDate(project.work_till);
+  });
+
   const [showFromDatePicker, setShowFromDatePicker] = useState(false);
   const [showTillDatePicker, setShowTillDatePicker] = useState(false);
 
@@ -63,39 +81,64 @@ const ProjectDetail = () => {
     getUserID();
   }, []);
 
+  // Improved date conversion function that handles multiple formats
   function convertToDate(dateString) {
     if (!dateString) return new Date();
-    const parts = dateString.split('/');
+
+    // Handle different date formats (DD/MM/YYYY or DD-MM-YYYY)
+    let parts;
+    if (dateString.includes('/')) {
+      parts = dateString.split('/');
+    } else if (dateString.includes('-')) {
+      parts = dateString.split('-');
+    } else {
+      return new Date(); // Default to today if format is unrecognized
+    }
+
     if (parts.length !== 3) return new Date();
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const year = parseInt(parts[2], 10);
+
+    // Parse date parts (handle both DD/MM/YYYY and MM/DD/YYYY formats)
+    let day, month, year;
+
+    // If first part is likely a day (1-31)
+    if (parseInt(parts[0], 10) <= 31) {
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1; // JS months are 0-indexed
+      year = parseInt(parts[2], 10);
+    } else {
+      // Assume MM/DD/YYYY format
+      month = parseInt(parts[0], 10) - 1;
+      day = parseInt(parts[1], 10);
+      year = parseInt(parts[2], 10);
+    }
+
+    // Ensure year has 4 digits
+    if (year < 100) year += 2000;
+
     return new Date(year, month, day);
   }
-
-  const formatDate = (date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const handleFromDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || workFromDate;
     setShowFromDatePicker(false);
+
+    // Format the date and update state
     setWorkFromDate(currentDate);
-    setWorkFrom(formatDate(currentDate));
+    const formattedDate = formatDate(currentDate);
+    setWorkFrom(formattedDate);
+    console.log('Selected work from date:', formattedDate);
   };
 
   const handleTillDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || workTillDate;
     setShowTillDatePicker(false);
+
+    // Format the date and update state
     setWorkTillDate(currentDate);
     setWorkTill(formatDate(currentDate));
   };
 
   const handleDelete = async () => {
-
     Alert.alert(
       'Delete Project ',
       'Are you sure you want to delete this Project record?',
@@ -108,10 +151,11 @@ const ProjectDetail = () => {
           text: 'Delete',
           onPress: async () => {
             try {
-              console .log('Deleting Project with ID:' , project?.project_id);
-              const response = await axios.delete(API_ENDPOINTS.DELETE_PROJECT, {params: {project_id: project?.project_id}});
+              console.log('Deleting Project with ID:', project?.project_id);
+              const response = await axios.delete(API_ENDPOINTS.DELETE_PROJECT, {
+                params: { project_id: project?.project_id },
+              });
               console.log('Delete response:', response.data);
-              console.log(response.data);
               if (response.data.status === 'success') {
                 navigation.navigate('MyTabs');
               }
@@ -123,12 +167,27 @@ const ProjectDetail = () => {
       ],
       { cancelable: false }
     );
-  }
+  };
 
   const validateInputs = () => {
     let isValid = true;
+
+    // Create a today date with time set to midnight for accurate comparison
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set time to midnight for accurate comparison
+    today.setHours(0, 0, 0, 0);
+
+    // Create comparison dates with time set to midnight
+    const fromDateForComparison = new Date(workFromDate);
+    fromDateForComparison.setHours(0, 0, 0, 0);
+
+    const tillDateForComparison = new Date(workTillDate);
+    tillDateForComparison.setHours(0, 0, 0, 0);
+
+    // Log the actual date objects for comparison
+    console.log('Comparing dates:');
+    console.log('From date:', fromDateForComparison.toISOString());
+    console.log('Today:', today.toISOString());
+    console.log('Is future date?', fromDateForComparison > today);
 
     if (!projectTitle.trim()) {
       setProjectTitleError('Please enter a project title.');
@@ -140,7 +199,7 @@ const ProjectDetail = () => {
     if (!workFrom) {
       setWorkFromError('Please select a "Worked from" date.');
       isValid = false;
-    } else if (workFromDate > today) {
+    } else if (fromDateForComparison > today) {
       setWorkFromError('"Worked from" date cannot be in the future.');
       isValid = false;
     } else {
@@ -150,7 +209,7 @@ const ProjectDetail = () => {
     if (!isInProgress && !workTill) {
       setWorkTillError('Please select a "Worked till" date.');
       isValid = false;
-    } else if (!isInProgress && workTillDate < workFromDate) {
+    } else if (!isInProgress && tillDateForComparison < fromDateForComparison) {
       setWorkTillError('"Worked till" date cannot be before "Worked from" date.');
       isValid = false;
     } else {
@@ -206,29 +265,27 @@ const ProjectDetail = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
-      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? 40 : 0 }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
+      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? Platform.OS === 'ios' ? -10 : 20 : 0 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.title}>Projects</Text>
         </View>
-        <View style={{ display: 'flex', flexDirection: 'row', gap: 30 , alignItems: 'center' }}>
-                      
-                           
-                      
-                            <TouchableOpacity disabled={loading} onPress={handleSave}>
-                                <Text style={styles.saveButton}>
-                                  {project ? (loading ? 'Saving...' : 'Edit') : loading ? 'Saving...' : 'Save'}
-                                </Text>
-                              </TouchableOpacity>
-                      
-                      
-                        {project &&    <TouchableOpacity style={styles.trashButton} onPress={handleDelete}>
-                              <Ionicons name="trash-outline" size={20} color="red" />
-                            </TouchableOpacity>}
-                </View>
+        <View style={{ display: 'flex', flexDirection: 'row', gap: 30, alignItems: 'center' }}>
+          <TouchableOpacity disabled={loading} onPress={handleSave}>
+            <Text style={styles.saveButton}>
+              {project ? (loading ? 'Saving...' : 'Edit') : loading ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+
+          {project && (
+            <TouchableOpacity style={styles.trashButton} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={20} color="red" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
@@ -281,6 +338,7 @@ const ProjectDetail = () => {
                 mode="date"
                 display="default"
                 onChange={handleFromDateChange}
+                maximumDate={new Date()} // Prevent selecting future dates
               />
             )}
           </View>
@@ -308,6 +366,8 @@ const ProjectDetail = () => {
                 mode="date"
                 display="default"
                 onChange={handleTillDateChange}
+                maximumDate={new Date()} // Prevent selecting future dates
+                minimumDate={workFromDate} // Prevent selecting dates before "Work from"
               />
             )}
           </View>
@@ -368,9 +428,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 5,
   },
+  trashButton: {
+    // Style for trash button if needed
+  },
   inputContainer: {
     marginBottom: 20,
-    position: 'relative', // Added for error text positioning
+    position: 'relative',
   },
   label: {
     fontSize: 16,

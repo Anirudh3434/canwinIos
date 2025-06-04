@@ -34,7 +34,7 @@ export default function Forgot() {
     let interval = null;
     if (timer > 0) {
       interval = setInterval(() => {
-        setTimer(prev => prev - 1);
+        setTimer((prev) => prev - 1);
       }, 1000);
     } else if (interval) {
       clearInterval(interval);
@@ -71,7 +71,7 @@ export default function Forgot() {
 
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
-      <StatusBar backgroundColor="transparent" translucent={true} barStyle={'dark-content'} />
+      <StatusBar backgroundColor={Colors.bg} translucent={true} barStyle={'dark-content'} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={[style.main, { backgroundColor: Colors.bg, marginTop: 30 }]}>
           <AppBar
@@ -140,9 +140,7 @@ export default function Forgot() {
               {loading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : timer > 0 ? (
-                <Text style={[style.btntxt, { marginBottom: -8 }]}>
-                  Resend in {timer}s
-                </Text>
+                <Text style={[style.btntxt, { marginBottom: -8 }]}>Resend in {timer}s</Text>
               ) : (
                 <Text style={[style.btntxt, { marginBottom: -8 }]}>SEND ME EMAIL</Text>
               )}

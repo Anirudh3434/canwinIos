@@ -97,7 +97,7 @@ const ProfileViewingSettings = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       {loading && (
         <View style={styles.loaderContainer}>
           <ActivityIndicator size={50} color={Colors.primary} />

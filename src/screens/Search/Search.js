@@ -27,6 +27,7 @@ const { width, height } = Dimensions.get('window');
 export default function Search() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
@@ -34,6 +35,10 @@ export default function Search() {
   const searchHistory = useSelector((state) => state.searchHistory);
 
   const handleSearch = () => {
+    if (loading) return;
+
+    setLoading(true);
+
     if (!title.trim() && !location.trim()) {
       Alert.alert('Error', 'Enter all fields');
       return;
@@ -124,10 +129,15 @@ export default function Search() {
             <Text style={styles.sectionTitle}>Your most recent searches</Text>
 
             {searchHistory.length > 0 ? (
-              <ScrollView horizontal={true} style={styles.recentSearchList}>
+              <ScrollView
+                horizontal={true}
+                style={styles.recentSearchList}
+                showsHorizontalScrollIndicator={false}
+              >
                 {searchHistory
                   .slice()
                   .reverse()
+                  .slice(0, 3)
                   .map((item, index) => (
                     <TouchableOpacity
                       key={item.id || index}

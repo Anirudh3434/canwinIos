@@ -11,7 +11,7 @@ import {
   Dimensions,
   Modal,
   Platform,
-  Alert
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -31,7 +31,6 @@ const Employment = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
-
   // State variables
   const [years, setYears] = useState('');
   const [months, setMonths] = useState('');
@@ -40,8 +39,7 @@ const Employment = () => {
   const [companyName, setCompanyName] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [salary, setSalary] = useState('');
-  const [currency, setCurrency] = useState('');
-  const [skill, setSkill] = useState('');
+  const [currency, setCurrency] = useState('₹'); // Set default currency
   const [noticePeriod, setNoticePeriod] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -61,14 +59,16 @@ const Employment = () => {
   const [jobTitleError, setJobTitleError] = useState('');
   const [salaryError, setSalaryError] = useState('');
   const [formattedDateError, setFormattedDateError] = useState('');
+  const [employmentTypeError, setEmploymentTypeError] = useState('');
+  const [experienceError, setExperienceError] = useState('');
 
   useEffect(() => {
     const fetchUserId = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
         if (storedUserId) {
-          const id = parseInt(storedUserId);
-          setUserId(+id); // Set userId state
+          const id = parseInt(storedUserId, 10);
+          setUserId(id); // Fixed: removed unnecessary +id
         }
       } catch (error) {
         console.error('Failed to retrieve userId:', error);
@@ -78,43 +78,59 @@ const Employment = () => {
     fetchSkills();
   }, []);
 
+  // Fixed: Improved date conversion with better error handling
   const convertToDate = (dateString) => {
     if (!dateString) return new Date();
-    // Handle both formats: DD/MM/YYYY and DD-MM-YYYY
-    const parts = dateString.includes('/') ? dateString.split('/') : dateString.split('-');
-    if (parts.length !== 3) return new Date();
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1; // Months are 0-indexed
-    const year = parseInt(parts[2], 10);
-    return new Date(year, month, day);
+    
+    try {
+      // Handle both formats: DD/MM/YYYY and DD-MM-YYYY
+      const parts = dateString.includes('/') ? dateString.split('/') : dateString.split('-');
+      if (parts.length !== 3) return new Date();
+      
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Months are 0-indexed
+      const year = parseInt(parts[2], 10);
+      
+      // Validate date parts
+      if (isNaN(day) || isNaN(month) || isNaN(year) || 
+          day < 1 || day > 31 || month < 0 || month > 11 || year < 1900) {
+        return new Date();
+      }
+      
+      return new Date(year, month, day);
+    } catch (error) {
+      console.error('Error converting date:', error);
+      return new Date();
+    }
   };
 
-  // ✅ Format date as DD/MM/YYYY
+  // Fixed: Consistent date formatting
   const formatDate = (date) => {
-    if (!(date instanceof Date) || isNaN(date)) return '';
-    // Format as DD/MM/YYYY to match your UI display format
+    if (!(date instanceof Date) || isNaN(date.getTime())) return '';
     return dayjs(date).format('DD/MM/YYYY');
   };
 
-  // ✅ Load data from props
+  // Fixed: Better data loading with proper skill handling
   useEffect(() => {
     if (emp) {
-      setYears(emp.total_exp_in_years || '');
-      setMonths(emp.total_exp_in_months || '');
+      setYears(emp.total_exp_in_years?.toString() || '');
+      setMonths(emp.total_exp_in_months?.toString() || '');
       setIsCurrent(emp.isCurrentCompany === 'Yes');
       setEmploymentType(emp.employment_type || '');
       setCompanyName(emp.curr_company_name || '');
       setJobTitle(emp.curr_job_title || '');
-      setSalary(emp.curr_annual_salary || '');
+      setSalary(emp.curr_annual_salary?.toString() || '');
       setNoticePeriod(emp.notice_period || '');
-      setCurrency(emp.currency || '');
-      setSkill(emp?.skill_used || '');
+      setCurrency(emp.currency || '₹');
 
+      // Fixed: Better skill handling
       if (emp.skill_used) {
-        setSkillNames(emp.skill_used.split(',') || []);
-        // You might need to map these to IDs if needed
+        const skillNamesArray = emp.skill_used.split(',').map(skill => skill.trim()).filter(Boolean);
+        setSkillNames(skillNamesArray);
+        // Note: You might need to map skill names to IDs if your API requires skill IDs
       }
 
+      // Fixed: Better date handling
       if (emp.joining_date) {
         const dateObj = convertToDate(emp.joining_date);
         setSelected(dateObj);
@@ -123,12 +139,14 @@ const Employment = () => {
     }
   }, [emp]);
 
-  // ✅ Handle date change from DatePicker
+  // Fixed: Consistent date change handling
   const handleDateChange = (event, selectedDate) => {
-    const currentDate = selectedDate || selected;
     setShowDatePicker(false);
-    setSelected(currentDate);
-    setFormattedDate(formatDate(currentDate));
+    if (selectedDate) {
+      setSelected(selectedDate);
+      setFormattedDate(formatDate(selectedDate));
+      setFormattedDateError(''); // Clear error when date is selected
+    }
   };
 
   const NoticePeroidOptions = [
@@ -141,10 +159,9 @@ const Employment = () => {
   ];
 
   const handleDelete = async () => {
-
     Alert.alert(
-      'Delete Employment ',
-      'Are you sure you want to delete this Employment record?',
+      'Delete Employment',
+      'Are you sure you want to delete this employment record?',
       [
         {
           text: 'Cancel',
@@ -154,105 +171,140 @@ const Employment = () => {
           text: 'Delete',
           onPress: async () => {
             try {
-              console .log('Deleting employment with ID:', emp.emp_id);
-              const response = await axios.delete(API_ENDPOINTS.DELETE_EMPLOYMENT, {params: {employment_id: emp?.emp_id}});
-              console.log('Delete response:', response.data);
-              console.log(response.data);
+              setLoading(true);
+              console.log('Deleting employment with ID:', emp.emp_id);
+              const response = await axios.delete(API_ENDPOINTS.DELETE_EMPLOYMENT, {
+                params: { employment_id: emp?.emp_id },
+              });
+              
               if (response.data.status === 'success') {
                 navigation.navigate('MyTabs');
+              } else {
+                Alert.alert('Error', 'Failed to delete employment record');
               }
             } catch (error) {
               console.error('Error deleting employment:', error);
+              Alert.alert('Error', 'Failed to delete employment record');
+            } finally {
+              setLoading(false);
             }
           },
         },
       ],
       { cancelable: false }
     );
-  }
+  };
 
+  // Fixed: Comprehensive validation
   const validateInputs = () => {
     let isValid = true;
 
+    // Reset all errors
+    setCompanyNameError('');
+    setJobTitleError('');
+    setSalaryError('');
+    setFormattedDateError('');
+    setEmploymentTypeError('');
+    setExperienceError('');
+
+    // Company name validation
     if (!companyName.trim()) {
       setCompanyNameError('Company name is required');
       isValid = false;
-    } else {
-      setCompanyNameError('');
     }
 
+    // Job title validation
     if (!jobTitle.trim()) {
       setJobTitleError('Job title is required');
       isValid = false;
-    } else {
-      setJobTitleError('');
     }
 
-    if (!salary.trim()) {
-      setSalaryError('Salary is required');
+    // Employment type validation
+    if (!employmentType) {
+      setEmploymentTypeError('Employment type is required');
       isValid = false;
-    } else if (isNaN(salary)) {
-      setSalaryError('Salary must be a number');
-      isValid = false;
-    } else {
-      setSalaryError('');
     }
 
+    // Experience validation
+    if (!years && !months) {
+      setExperienceError('Please enter your total experience');
+      isValid = false;
+    } else {
+      const yearsNum = parseInt(years) || 0;
+      const monthsNum = parseInt(months) || 0;
+      
+      if (yearsNum < 0 || monthsNum < 0 || monthsNum > 11) {
+        setExperienceError('Please enter valid experience values');
+        isValid = false;
+      }
+    }
+
+    // Salary validation (only for current employment)
+    if (isCurrent) {
+      if (!salary.trim()) {
+        setSalaryError('Salary is required for current employment');
+        isValid = false;
+      } else if (isNaN(parseFloat(salary)) || parseFloat(salary) <= 0) {
+        setSalaryError('Please enter a valid salary amount');
+        isValid = false;
+      }
+    }
+
+    // Date validation
     if (!formattedDate) {
       setFormattedDateError('Joining date is required');
       isValid = false;
-    } else {
-      setFormattedDateError('');
     }
 
     return isValid;
   };
 
   const handleSave = async () => {
-    console.log('Clicked');
-
     if (!validateInputs()) {
       return;
     }
 
-    // Create employment data object
+    // Fixed: Better data preparation
     const employmentData = {
       user_id: userId,
       isCurrentCompany: isCurrent ? 'Yes' : 'No',
-      curr_annual_salary: +salary,
       employment_type: employmentType,
       joining_date: formattedDate,
-      end_date: '11/08/2010', // Replace with dynamic value if needed
-      total_exp_in_years: years,
-      total_exp_in_months: months,
+      total_exp_in_years: parseInt(years) || 0,
+      total_exp_in_months: parseInt(months) || 0,
       curr_job_title: jobTitle,
       curr_company_name: companyName,
-      notice_period: noticePeriod,
-      currency: currency,
       skill_used: skillNames.join(','),
     };
 
+    // Add current employment specific fields
+    if (isCurrent) {
+      employmentData.curr_annual_salary = parseFloat(salary);
+      employmentData.currency = currency;
+      employmentData.notice_period = noticePeriod;
+    } else {
+      // For previous employment, you might want to add end_date
+      employmentData.end_date = ''; // You should add an end date picker for previous employment
+    }
+
     // If editing existing employment, add the ID
-    if (emp) {
+    if (emp?.emp_id) {
       employmentData.emp_id = emp.emp_id;
     }
 
-    // For API requests
     try {
       setLoading(true);
       const response = await axios.post(API_ENDPOINTS.EMPLOYMENT, employmentData);
-      console.log('Response:', response.data);
-
+      
       if (response.data.status === 'success') {
         navigation.navigate(req === 'ResumeLocal' ? 'Resume Form' : 'MyTabs');
-        setLoading(false);
       } else {
-        console.error('Failed to save employment details:', response.data);
-        setLoading(false);
+        Alert.alert('Error', 'Failed to save employment details. Please try again.');
       }
     } catch (error) {
       console.error('API Error:', error);
-      alert('Failed to save data. Please try again.');
+      Alert.alert('Error', 'Failed to save data. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -268,37 +320,46 @@ const Employment = () => {
 
   const fetchSkills = async () => {
     try {
-      const skills = await axios.get(API_ENDPOINTS.SKILL_LIST);
-      const skillList = skills.data.data.map((item) => ({
-        label: item.skill_name,
-        value: item.skill_id,
-      }));
-      setSkillList(skillList);
+      const response = await axios.get(API_ENDPOINTS.SKILL_LIST);
+      if (response.data?.data) {
+        const skillList = response.data.data.map((item) => ({
+          label: item.skill_name,
+          value: item.skill_id,
+        }));
+        setSkillList(skillList);
+      }
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching skills:', error);
     }
   };
 
+  // Fixed: Better skill addition logic
   const handleAddSkillFromDropdown = () => {
     if (selectedSkill) {
-      // Find the selected skill object from skillList
       const selectedSkillObj = skillList.find((skill) => skill.value === selectedSkill);
-
-      // Check if skill already exists in the skills array
-      if (selectedSkillObj && !skills.includes(selectedSkillObj.value)) {
-        setSkills([...skills, selectedSkillObj.value]);
-        setSkillNames([...skillNames, selectedSkillObj.label]);
-        setSelectedSkill(null); // Reset selection
-        setSkillOpen(false); // Close dropdown after selection
+      
+      if (selectedSkillObj) {
+        // Check if skill already exists
+        const skillExists = skills.includes(selectedSkillObj.value) || 
+                           skillNames.includes(selectedSkillObj.label);
+        
+        if (!skillExists) {
+          setSkills([...skills, selectedSkillObj.value]);
+          setSkillNames([...skillNames, selectedSkillObj.label]);
+        }
+        
+        setSelectedSkill(null);
+        setSkillOpen(false);
       }
     }
   };
 
-  const handleOpenDropdown = (type) => {
-    // Close other dropdowns if needed
-    if (type === 'skill') {
-      setSkillOpen(true);
-    }
+  // Fixed: Better skill removal
+  const handleRemoveSkill = (index) => {
+    const newSkillNames = skillNames.filter((_, i) => i !== index);
+    const newSkills = skills.filter((_, i) => i !== index);
+    setSkillNames(newSkillNames);
+    setSkills(newSkills);
   };
 
   const handleSelect = (option, dropdownType) => {
@@ -375,30 +436,29 @@ const Employment = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
-      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? 40 : 0 }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
+      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? Platform.OS === 'ios' ? -10 : 20 : 0 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.title}>Employment</Text>
         </View>
-        <View style={{ display: 'flex', flexDirection: 'row', gap: 30 , alignItems: 'center' }}>
-       
-            
-       
-             <TouchableOpacity disabled={loading} onPress={handleSave}>
-                 <Text style={styles.saveButton}>
-                   {emp ? (loading ? 'Saving...' : 'Edit') : loading ? 'Saving...' : 'Save'}
-                 </Text>
-               </TouchableOpacity>
-       
-       
-         {emp &&    <TouchableOpacity style={styles.trashButton} onPress={handleDelete}>
-               <Ionicons name="trash-outline" size={20} color="red" />
-             </TouchableOpacity>}
-             </View>
+        <View style={{ display: 'flex', flexDirection: 'row', gap: 30, alignItems: 'center' }}>
+          <TouchableOpacity disabled={loading} onPress={handleSave}>
+            <Text style={[styles.saveButton, loading && styles.disabledButton]}>
+              {emp ? (loading ? 'Updating...' : 'Update') : loading ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+
+          {emp && (
+            <TouchableOpacity style={styles.trashButton} onPress={handleDelete} disabled={loading}>
+              <Ionicons name="trash-outline" size={20} color={loading ? "#ccc" : "red"} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
+      
       <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Is this your current company?</Text>
@@ -419,7 +479,7 @@ const Employment = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Employment type</Text>
+          <Text style={styles.label}>Employment type *</Text>
           <View style={styles.buttonRow}>
             <TouchableOpacity
               style={
@@ -427,7 +487,10 @@ const Employment = () => {
                   ? styles.badgeButtonSelected
                   : styles.badgeButtonUnselected
               }
-              onPress={() => setEmploymentType('Full-Time')}
+              onPress={() => {
+                setEmploymentType('Full-Time');
+                setEmploymentTypeError('');
+              }}
             >
               <Text style={styles.buttonText}>Full-Time</Text>
             </TouchableOpacity>
@@ -437,23 +500,30 @@ const Employment = () => {
                   ? styles.badgeButtonSelected
                   : styles.badgeButtonUnselected
               }
-              onPress={() => setEmploymentType('Part-Time')}
+              onPress={() => {
+                setEmploymentType('Part-Time');
+                setEmploymentTypeError('');
+              }}
             >
               <Text style={styles.buttonText}>Part-Time</Text>
             </TouchableOpacity>
           </View>
+          {employmentTypeError && <Text style={styles.errorText}>{employmentTypeError}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Total Experience</Text>
+          <Text style={styles.label}>Total Experience *</Text>
           <View style={styles.experienceContainer}>
             <View style={styles.experienceInputGroup}>
               <TextInput
-                style={styles.experienceInput}
-                placeholder=""
+                style={[styles.experienceInput, experienceError && styles.inputError]}
+                placeholder="0"
                 keyboardType="numeric"
                 value={years}
-                onChangeText={setYears}
+                onChangeText={(text) => {
+                  setYears(text);
+                  setExperienceError('');
+                }}
                 maxLength={2}
               />
               <Text style={styles.unitLabel}>Years</Text>
@@ -461,14 +531,15 @@ const Employment = () => {
 
             <View style={styles.experienceInputGroup}>
               <TextInput
-                style={styles.experienceInput}
-                placeholder=""
+                style={[styles.experienceInput, experienceError && styles.inputError]}
+                placeholder="0"
                 keyboardType="numeric"
                 value={months}
                 onChangeText={(text) => {
                   const numValue = parseInt(text);
                   if (!text || (numValue >= 0 && numValue <= 11)) {
                     setMonths(text);
+                    setExperienceError('');
                   }
                 }}
                 maxLength={2}
@@ -476,32 +547,39 @@ const Employment = () => {
               <Text style={styles.unitLabel}>Months</Text>
             </View>
           </View>
+          {experienceError && <Text style={styles.errorText}>{experienceError}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Current Company Name</Text>
+          <Text style={styles.label}>{isCurrent ? 'Current Company Name' : 'Company Name'} *</Text>
           <TextInput
             style={[styles.input, companyNameError && styles.inputError]}
-            placeholder="Company Name"
+            placeholder="Enter company name"
             value={companyName}
-            onChangeText={setCompanyName}
+            onChangeText={(text) => {
+              setCompanyName(text);
+              setCompanyNameError('');
+            }}
           />
           {companyNameError && <Text style={styles.errorText}>{companyNameError}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Current Job Title</Text>
+          <Text style={styles.label}>{isCurrent ? 'Current Job Title' : 'Job Title'} *</Text>
           <TextInput
             style={[styles.input, jobTitleError && styles.inputError]}
-            placeholder="Job Title"
+            placeholder="Enter job title"
             value={jobTitle}
-            onChangeText={setJobTitle}
+            onChangeText={(text) => {
+              setJobTitle(text);
+              setJobTitleError('');
+            }}
           />
           {jobTitleError && <Text style={styles.errorText}>{jobTitleError}</Text>}
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Date of Join</Text>
+          <Text style={styles.label}>Date of Joining *</Text>
           <TouchableOpacity
             onPress={() => setShowDatePicker(true)}
             style={[styles.datePickerButton, formattedDateError && styles.inputError]}
@@ -513,8 +591,8 @@ const Employment = () => {
           </TouchableOpacity>
           {formattedDateError && <Text style={styles.errorText}>{formattedDateError}</Text>}
 
-          {showDatePicker &&
-            (Platform.OS === 'ios' ? (
+          {showDatePicker && (
+            Platform.OS === 'ios' ? (
               <Modal
                 transparent={true}
                 visible={showDatePicker}
@@ -537,15 +615,10 @@ const Employment = () => {
                       value={selected instanceof Date ? selected : new Date()}
                       mode="date"
                       display="spinner"
-                      onChange={(event, date) => {
-                        if (date) {
-                          setSelected(date); // Store as Date object
-                          setFormattedDate(formatDate(date)); // Display formatted date
-                        }
-                        setShowDatePicker(false);
-                      }}
+                      onChange={handleDateChange}
                       style={{ width: '100%' }}
                       textColor="#333"
+                      maximumDate={new Date()} // Prevent future dates
                     />
                   </View>
                 </TouchableOpacity>
@@ -555,15 +628,11 @@ const Employment = () => {
                 value={selected instanceof Date ? selected : new Date()}
                 mode="date"
                 display="default"
-                onChange={(event, date) => {
-                  if (date) {
-                    setSelected(date); // Store as Date object
-                    setFormattedDate(formatDate(date)); // Display formatted date
-                  }
-                  setShowDatePicker(false);
-                }}
+                onChange={handleDateChange}
+                maximumDate={new Date()} // Prevent future dates
               />
-            ))}
+            )
+          )}
         </View>
 
         <View style={styles.inputContainer}>
@@ -575,15 +644,12 @@ const Employment = () => {
                 listMode="SCROLLVIEW"
                 scrollViewProps={{ nestedScrollEnabled: true }}
                 open={skillOpen}
-                setOpen={(open) => {
-                  if (open) handleOpenDropdown('skill');
-                  else setSkillOpen(false);
-                }}
+                setOpen={setSkillOpen}
                 value={selectedSkill}
                 setValue={setSelectedSkill}
                 items={skillList}
                 placeholder="Select Skill"
-                style={[styles.dropdownInput]}
+                style={styles.dropdownInput}
                 dropDownContainerStyle={[styles.dropdownContainer, { maxHeight: 200 }]}
                 zIndex={2000}
                 zIndexInverse={3000}
@@ -592,9 +658,10 @@ const Employment = () => {
             <TouchableOpacity
               style={[styles.addSkillButton, { marginLeft: 10 }]}
               onPress={handleAddSkillFromDropdown}
+              disabled={!selectedSkill}
             >
-              <Text style={styles.addSkillText}>Add</Text>
-              <Ionicons name="add" size={18} color="#50B5A3" />
+              <Text style={[styles.addSkillText, !selectedSkill && { color: '#ccc' }]}>Add</Text>
+              <Ionicons name="add" size={18} color={!selectedSkill ? "#ccc" : "#50B5A3"} />
             </TouchableOpacity>
           </View>
 
@@ -603,17 +670,7 @@ const Employment = () => {
               {skillNames.map((skillName, index) => (
                 <View key={index} style={styles.skillBadge}>
                   <Text style={styles.skillText}>{skillName}</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const newSkillNames = [...skillNames];
-                      newSkillNames.splice(index, 1);
-                      setSkillNames(newSkillNames);
-
-                      const newSkills = [...skills];
-                      newSkills.splice(index, 1);
-                      setSkills(newSkills);
-                    }}
-                  >
+                  <TouchableOpacity onPress={() => handleRemoveSkill(index)}>
                     <Ionicons name="close-circle" size={16} color="#667085" />
                   </TouchableOpacity>
                 </View>
@@ -622,71 +679,78 @@ const Employment = () => {
           )}
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Current annual salary</Text>
-          <View style={styles.experienceContainer}>
-            <View style={styles.experienceInputGroup}>
-              <TouchableOpacity
-                style={[
-                  styles.input,
-                  activeDropdown === 'Currency' && styles.activeInput,
-                  { width: 80, height: 60 },
-                ]}
-                onPress={(e) => toggleDropdown('Currency', e)}
-              >
-                <Text style={[styles.inputText, currency && styles.selectedInputText]}>
-                  {currency || '$'}
-                </Text>
-                <Ionicons
-                  name={
-                    activeDropdown === 'Currency' ? 'chevron-up-outline' : 'chevron-down-outline'
-                  }
-                  size={20}
-                  color="#999"
+        {isCurrent && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Current annual salary *</Text>
+            <View style={styles.experienceContainer}>
+              <View style={styles.experienceInputGroup}>
+                <TouchableOpacity
+                  style={[
+                    styles.input,
+                    activeDropdown === 'Currency' && styles.activeInput,
+                    { width: 80, height: 60 },
+                  ]}
+                  onPress={(e) => toggleDropdown('Currency', e)}
+                >
+                  <Text style={[styles.inputText, currency && styles.selectedInputText]}>
+                    {currency}
+                  </Text>
+                  <Ionicons
+                    name={
+                      activeDropdown === 'Currency' ? 'chevron-up-outline' : 'chevron-down-outline'
+                    }
+                    size={20}
+                    color="#999"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.experienceInputGroup}>
+                <TextInput
+                  style={[styles.AmountInput, salaryError && styles.inputError]}
+                  placeholder="Enter amount"
+                  keyboardType="numeric"
+                  value={salary}
+                  onChangeText={(text) => {
+                    setSalary(text);
+                    setSalaryError('');
+                  }}
+                  maxLength={10}
                 />
-              </TouchableOpacity>
+                <Text style={styles.unitLabel}>per year</Text>
+              </View>
             </View>
+            {salaryError && <Text style={styles.errorText}>{salaryError}</Text>}
+          </View>
+        )}
 
-            <View style={styles.experienceInputGroup}>
-              <TextInput
-                style={[styles.AmountInput, salaryError && styles.inputError]}
-                placeholder=""
-                keyboardType="numeric"
-                value={salary}
-                onChangeText={setSalary}
-                maxLength={10}
-              />
-              <Text style={styles.unitLabel}>per year</Text>
+        {isCurrent && (
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Notice period</Text>
+            <View style={[styles.buttonRow, { flexWrap: 'wrap' }]}>
+              {NoticePeroidOptions.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    noticePeriod === option
+                      ? styles.badgeButtonSelected
+                      : styles.badgeButtonUnselected,
+                    { marginBottom: 10 }
+                  ]}
+                  onPress={() => setNoticePeriod(option)}
+                >
+                  <Text style={[styles.buttonText, { fontSize: 12 }]}>{option}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-          {salaryError && <Text style={styles.errorText}>{salaryError}</Text>}
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Notice period*</Text>
-          <View style={[styles.buttonRow, { flexWrap: 'wrap' }]}>
-            {NoticePeroidOptions.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={
-                  noticePeriod === option
-                    ? styles.badgeButtonSelected
-                    : styles.badgeButtonUnselected
-                }
-                onPress={() => setNoticePeriod(option)}
-              >
-                <Text style={[styles.buttonText, { fontSize: 12 }]}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+        )}
       </ScrollView>
 
       {renderDropdownModal()}
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   BackHandler,
   Alert,
-  SafeAreaView
+  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -23,7 +23,7 @@ import { API_ENDPOINTS } from '../../api/apiConfig';
 
 const ManageJob = () => {
   const navigation = useNavigation();
-  
+
   const [userId, setUserId] = useState(null);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,19 +32,20 @@ const ManageJob = () => {
   const [statusVisible, setStatusVisible] = useState(false);
   const [selectedSort, setSelectedSort] = useState('');
   const [menuVisibleForJobId, setMenuVisibleForJobId] = useState(null);
-  
+  const [status, setStatus] = useState('');
+
   // Fetch user ID when component mounts
   useEffect(() => {
     fetchUserId();
   }, []);
-  
+
   // Fetch job postings when userId changes
   useEffect(() => {
     if (userId) {
       fetchJobPosting();
     }
-  }, [userId]);
-  
+  }, [userId, status]);
+
   // Handle back button and refresh data when screen is focused
   useFocusEffect(
     React.useCallback(() => {
@@ -52,18 +53,18 @@ const ManageJob = () => {
         navigation.navigate('MyTabs');
         return true;
       };
-      
+
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      
+
       // Refresh data when screen is focused
       fetchUserId();
-      
+
       return () => {
         BackHandler.removeEventListener('hardwareBackPress', onBackPress);
       };
     }, [navigation])
   );
-  
+
   const fetchUserId = async () => {
     setIsLoading(true);
     try {
@@ -85,14 +86,26 @@ const ManageJob = () => {
       setIsLoading(false);
     }
   };
-  
+
+  const backAction = () => {
+    navigation.navigate('MyTabs');
+    return true;
+  };
+
+  useEffect(() => {
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', backAction);
+    };
+  }, []);
+
   const fetchJobPosting = async () => {
     if (!userId) return;
+
     try {
       const response = await axios.get(API_ENDPOINTS.FETCH_JOB_POSTING, {
-        params: { user_id: userId, status: '' },
+        params: { user_id: userId, status: status },
       });
-      
+
       if (response.data && response.data.data) {
         setApplications(response.data.data);
       } else {
@@ -106,29 +119,33 @@ const ManageJob = () => {
       setIsLoading(false);
     }
   };
-  
+
   const toggleMenu = (jobId) => {
-    setMenuVisibleForJobId(prevId => prevId === jobId ? null : jobId);
+    setMenuVisibleForJobId((prevId) => (prevId === jobId ? null : jobId));
     setSortVisible(false);
   };
-  
+
   const toggleSortMenu = () => {
     setSortVisible(!sortVisible);
     setStatusVisible(false);
     setMenuVisibleForJobId(null);
   };
-  
+
   const handleStatusSelect = (status) => {
-    console.log(status);
+    if (status === 'All') {
+      setStatus('');
+    } else {
+      setStatus(status);
+    }
     setStatusVisible(false);
   };
-  
+
   const handleRepost = (job) => {
     if (!job) {
       Alert.alert('Error', 'Invalid job data');
       return;
     }
-    
+
     const payload = {
       employer_id: job.employer_id || userId,
       job_title: job.job_title || '',
@@ -151,7 +168,7 @@ const ManageJob = () => {
       education: job.EDUCATION || '',
       status: job.STATUS || 'Active',
     };
-    
+
     Alert.alert(
       'Confirm Repost',
       'Are you sure you want to repost this job?',
@@ -179,13 +196,13 @@ const ManageJob = () => {
       { cancelable: true }
     );
   };
-  
+
   const handleDelete = (job) => {
     if (!job || !job.job_id) {
       Alert.alert('Error', 'Invalid job data');
       return;
     }
-    
+
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this job posting?',
@@ -212,8 +229,10 @@ const ManageJob = () => {
       { cancelable: true }
     );
   };
-  
+
   const renderItem = ({ item, index }) => {
+    const isLastItem = index === applications.length - 1 && applications.length !== 1;
+
     return (
       <View>
         <JobCard
@@ -223,9 +242,9 @@ const ManageJob = () => {
           onDelete={() => handleDelete(item)}
           onRepost={() => handleRepost(item)}
         />
-        
+
         {menuVisibleForJobId === (item.job_id || index) && (
-          <View style={styles.menu}>
+          <View style={[styles.menu, isLastItem && styles.menuShiftUp]}>
             <TouchableOpacity
               onPress={() => {
                 setMenuVisibleForJobId(null);
@@ -235,9 +254,10 @@ const ManageJob = () => {
             >
               <Text style={styles.menuItemText}>Re-Post</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={() => {
+                console.log(item);
                 setMenuVisibleForJobId(null);
                 navigation.navigate('AddJob', { job: item });
               }}
@@ -245,7 +265,7 @@ const ManageJob = () => {
             >
               <Text style={styles.menuItemText}>Edit</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               onPress={() => {
                 setMenuVisibleForJobId(null);
@@ -260,7 +280,7 @@ const ManageJob = () => {
       </View>
     );
   };
-  
+
   return (
     <SafeAreaView style={style.area}>
       <AppBar
@@ -287,7 +307,7 @@ const ManageJob = () => {
               />
               <Text style={styles.headerText}>Sort</Text>
             </TouchableOpacity>
-            
+
             {/* Sort Dropdown */}
             {sortVisible && (
               <View style={styles.dropdown}>
@@ -308,9 +328,9 @@ const ManageJob = () => {
                   />
                   <Text style={styles.menuText}>By Status</Text>
                 </TouchableOpacity>
-                
+
                 {statusVisible &&
-                  ['Active', 'Inactive', 'Draft'].map((status) => (
+                  ['Active', 'Inactive', 'All'].map((status) => (
                     <TouchableOpacity
                       key={status}
                       style={styles.menuItem}
@@ -322,7 +342,7 @@ const ManageJob = () => {
                       <Text style={styles.menuText}>{status}</Text>
                     </TouchableOpacity>
                   ))}
-                  
+
                 <TouchableOpacity
                   style={styles.menuItem}
                   onPress={() => {
@@ -346,7 +366,7 @@ const ManageJob = () => {
           </View>
         }
       />
-      
+
       <View style={styles.container}>
         {isLoading ? (
           <Text>Loading...</Text>
@@ -354,10 +374,14 @@ const ManageJob = () => {
           <Text style={{ color: 'red' }}>{error}</Text>
         ) : (
           <FlatList
+            showsVerticalScrollIndicator={false}
             data={applications}
             renderItem={renderItem}
-            keyExtractor={(item, index) => (item.job_id || index.toString())}
-            ListEmptyComponent={<Text>No job postings found</Text>}
+            keyExtractor={(item, index) => item?.job_id?.toString() || index.toString()}
+            style={{ flex: 1, paddingBottom: 40 }}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20 }}>No job postings found</Text>
+            }
           />
         )}
       </View>
@@ -386,6 +410,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
+    marginTop: 5,
   },
   headerImage: {
     width: 14,
@@ -443,5 +468,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     zIndex: 5,
+  },
+  menuShiftUp: {
+    top: -120,
   },
 });

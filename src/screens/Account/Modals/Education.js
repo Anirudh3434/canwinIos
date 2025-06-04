@@ -31,7 +31,7 @@ const EducationDetails = () => {
   const scrollViewRef = React.useRef(null);
 
   const [user_id, setUserId] = useState(null);
-  const { req, edu, id , done} = route.params || {};
+  const { req, edu, id, done } = route.params || {};
 
   const [loading, setLoading] = useState(false);
 
@@ -44,9 +44,6 @@ const EducationDetails = () => {
     'Diploma',
   ];
 
-
-
-
   const [educationLevel, setEducationLevel] = useState(edu?.education || '');
   const [board, setBoard] = useState(edu?.board_name || '');
   const [marks, setMarks] = useState(edu?.marks || '');
@@ -58,8 +55,6 @@ const EducationDetails = () => {
   const [filterEducationOptions, setFilterEducationOptions] = useState(educationLevelOptions);
 
   const filter = educationLevelOptions.filter((option) => !done?.includes(option));
-
-
 
   const [boardOpen, setBoardOpen] = useState(false);
 
@@ -92,8 +87,6 @@ const EducationDetails = () => {
 
   console.log('user_id:', user_id);
 
-
-
   const boardOptions = [
     { label: 'CBSE', value: 'CBSE' },
     { label: 'ICSE', value: 'ICSE' },
@@ -102,7 +95,6 @@ const EducationDetails = () => {
     { label: 'Cambridge (IGCSE)', value: 'Cambridge (IGCSE)' },
     { label: 'Other', value: 'Other' },
   ];
-
 
   const handleDelete = async () => {
     Alert.alert(
@@ -118,7 +110,9 @@ const EducationDetails = () => {
           onPress: async () => {
             try {
               console.log('Deleting education record with ID:', typeof edu?.education_id);
-              const response = await axios.delete(API_ENDPOINTS.DELETE_EDUCATION, {params: {education_id: edu?.education_id}});
+              const response = await axios.delete(API_ENDPOINTS.DELETE_EDUCATION, {
+                params: { education_id: edu?.education_id },
+              });
               console.log('Delete response:', response.data);
               console.log(response.data);
               if (response.data.status === 'success') {
@@ -132,7 +126,7 @@ const EducationDetails = () => {
       ],
       { cancelable: false }
     );
-  }
+  };
 
   const validateInputs = () => {
     let isValid = true;
@@ -250,33 +244,31 @@ const EducationDetails = () => {
     }
   };
 
-  console.log('req', req)
+  console.log('req', req);
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
-      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? 40 : 0 }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
+       <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? Platform.OS === 'ios' ? -10 : 20 : 0 }]}>
         <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
           <Text style={styles.title}>Education</Text>
         </View>
-      <View style={{ display: 'flex', flexDirection: 'row', gap: 30 , alignItems: 'center' }}>
+        <View style={{ display: 'flex', flexDirection: 'row', gap: 30, alignItems: 'center' }}>
+          <TouchableOpacity disabled={loading} onPress={handleSave}>
+            <Text style={styles.saveButton}>
+              {edu ? (loading ? 'Saving...' : 'Edit') : loading ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
 
-     
-
-      <TouchableOpacity disabled={loading} onPress={handleSave}>
-          <Text style={styles.saveButton}>
-            {edu ? (loading ? 'Saving...' : 'Edit') : loading ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-
-
-   {edu &&   <TouchableOpacity style={styles.trashButton} onPress={handleDelete}>
-        <Ionicons name="trash-outline" size={20} color="red" />
-      </TouchableOpacity>}
-      </View>
+          {edu && (
+            <TouchableOpacity style={styles.trashButton} onPress={handleDelete}>
+              <Ionicons name="trash-outline" size={20} color="red" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView
@@ -616,7 +608,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-Regular',
   },
- 
 });
 
 export default EducationDetails;

@@ -11,53 +11,38 @@ import {
   StatusBar,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
-import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 
 const LinkedInLogin = () => {
   const [userData, setUserData] = useState(null);
-  const [apiResponse, setApiResponse] = useState(null); // ✅ To store the raw API response
+  const [apiResponse, setApiResponse] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [webViewKey, setWebViewKey] = useState(0); // ✅ WebView reset key
 
   const navigation = useNavigation();
 
   const clientId = '86pg9onlum0hah';
   const redirectUri = 'https://devcrm20.abacasys.com:9100/linkedin/callback';
+
   const authState = 'test123';
   const scopes = 'openid profile email w_member_social';
+
   const authorizationUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&state=${authState}&scope=${encodeURIComponent(scopes)}`;
 
-  const handleWebViewNavigationStateChange = async (newNavState) => {
-    const { url } = newNavState;
+  console.log('authorizationUrl', authorizationUrl);
 
-    if (url.startsWith(redirectUri)) {
-      const code = new URL(url).searchParams.get('code');
-
-      if (code) {
-        setLoading(true);
-
-        try {
-          const response = await axios.get(
-            `https://linkedinbackend-ndvv.onrender.com/linkedin/callback?code=${code}`
-          );
-
-          // ✅ Store the API response and user data
-          setUserData(response.data.user);
-          setApiResponse(response.data); // Store full API response
-          setLoading(false);
-        } catch (error) {
-          console.error('❌ Error fetching user data:', error);
-          setLoading(false);
-        }
-      }
-    }
+  const handleLogout = () => {
+    setUserData(null);
+    setApiResponse(null);
+    setWebViewKey((prev) => prev + 1);
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" color="white" />
+      <StatusBar barStyle="dark-content" color={Colors.bg} />
+
       {loading ? (
         <ActivityIndicator size="large" color="#0073b1" />
       ) : userData ? (
@@ -80,13 +65,13 @@ const LinkedInLogin = () => {
             title="Go to Details"
             onPress={() => navigation.navigate('DetailsScreen', { userData, apiResponse })}
           />
-          <Button title="Logout" onPress={() => setUserData(null)} />
+          <Button title="Logout" onPress={handleLogout} />
         </ScrollView>
       ) : (
         <WebView
+          key={webViewKey} // ✅ Add key to force reload
           source={{ uri: authorizationUrl }}
           style={styles.webview}
-          onNavigationStateChange={handleWebViewNavigationStateChange}
         />
       )}
     </View>

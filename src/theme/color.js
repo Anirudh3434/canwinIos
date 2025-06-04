@@ -1,6 +1,6 @@
 export const Colors = {
   primary: '#14B6AA',
-  bg: '#FFFFFF',
+  bg: '#ffffff',
   top: '#FBFBFB',
 
   active: '#000000',
@@ -22,4 +22,10 @@ export const Colors = {
   bg2: '#FBF6FF',
 
   green: '#54D969',
+
+  red: '#FE2223',
+  secondaryRed: '#FDF2F3',
+
+  yellow: '#FFC11A',
+  secondaryYellow: '#FEF3D2',
 };

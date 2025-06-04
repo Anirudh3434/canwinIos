@@ -206,8 +206,14 @@ export default function Signup() {
             user_id: userId,
           });
 
+          const serviceResponse = await axios.post(API_ENDPOINTS.SERVICE_PROVIDER, {
+            resume_count: 2,
+            user_id: userId,
+          });
+
           console.log('Intro Response:', introResponse.data);
           console.log('Basic Details Response:', basicDetailsResponse.data);
+          console.log('Service Provider Response:', serviceResponse.data);
         } else if (response.data.code === -20001) {
           // User already exists, fetch the user ID
           console.log('User already exists, fetching user ID');
@@ -341,10 +347,16 @@ export default function Signup() {
               user_id: userId,
             });
 
+            const serviceResponse = await axios.post(API_ENDPOINTS.SERVICE_PROVIDER, {
+              resume_count: 2,
+              user_id: userId,
+            });
+
             console.log(
               '✅ Intro & Basic Details Added:',
               introResponse.data,
-              basicDetailsResponse.data
+              basicDetailsResponse.data,
+              serviceResponse.data
             );
 
             // ✅ Navigate to Main Screen

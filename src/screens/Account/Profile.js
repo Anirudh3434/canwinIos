@@ -45,7 +45,7 @@ export default function Profile() {
   const [VideoPopMenu, setVideoPopMenu] = useState(false);
   const [VideoProfile, setVideoProfile] = useState(null);
   const [JobSearchStatusMenu, setJobSearchStatusMenu] = useState(false);
-  
+
   const [DoneQulaified, setDoneQulified] = useState([]);
 
   const dispatch = useDispatch();
@@ -163,8 +163,6 @@ export default function Profile() {
     });
   };
 
-
-  
   // console.log('Recorded video:', VideoProfile);
 
   const pickImage = () => {
@@ -234,23 +232,17 @@ export default function Profile() {
     fetchUserId();
   }, []);
 
-
-
   const { profileDetail, isLoading, isError, refetch } = useFetchProfileDetail(userId);
 
+  console.log('Profile Detail:', profileDetail);
 
+  useEffect(() => {
+    profileDetail.education.map((educ) => {
+      setDoneQulified((prev) => [...prev, educ.education]);
+    });
+  }, [profileDetail.education]);
 
-  useEffect(()=>{
-    profileDetail.education.map((educ)=>{
-    
-        setDoneQulified((prev)=>[...prev,educ.education
-
-        ])
-      
-    })
-  } ,[profileDetail.education])
-
-  console.log ('Done Qualified:', DoneQulaified);
+  console.log('Done Qualified:', DoneQulaified);
 
   useEffect(() => {
     if (profileDetail && Object.keys(profileDetail).length > 0) {
@@ -310,76 +302,75 @@ export default function Profile() {
   }, [sideBar, slideAnim, fadeAnim]);
 
   const VideoPop = ({ onClose }) => {
-      const translateY = useRef(new Animated.Value(0)).current;
+    const translateY = useRef(new Animated.Value(0)).current;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        gestureState.dy > 5, // only respond to downward swipes
-      onPanResponderMove: Animated.event([null, { dy: translateY }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          Animated.timing(translateY, {
-            toValue: height,
-            duration: 300,
-            useNativeDriver: false,
-          }).start(onClose);
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
-  
+    const panResponder = useRef(
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 5, // only respond to downward swipes
+        onPanResponderMove: Animated.event([null, { dy: translateY }], {
+          useNativeDriver: false,
+        }),
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy > 100) {
+            Animated.timing(translateY, {
+              toValue: height,
+              duration: 300,
+              useNativeDriver: false,
+            }).start(onClose);
+          } else {
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: false,
+            }).start();
+          }
+        },
+      })
+    ).current;
+
     return (
       <Animated.View
-      style={[styles.VideoPop, { transform: [{ translateY }] }]}
-      {...panResponder.panHandlers}
+        style={[styles.VideoPop, { transform: [{ translateY }] }]}
+        {...panResponder.panHandlers}
       >
-      <Text style={styles.title}>Add video profile</Text>
-      <Text style={styles.subtitle}>
-        Supported file format: MP4, Max size: 225mb, Video length: 30 sec to 2min
-      </Text>
-    
-      <View style={styles.buttonContainer}>
-        <View>
-        <TouchableOpacity onPress={recordVideo} style={styles.videoIconButton}>
-          <Image
-          source={require('../../../assets/image/camera.png')}
-          style={styles.videoIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.buttonText}>Record Now</Text>
-        </View>
-    
-        <View>
-        <TouchableOpacity onPress={uploadVideo} style={styles.videoIconButton}>
-          <Image
-          source={require('../../../assets/image/uploadFile.png')}
-          style={styles.videoIcon}
-          />
-        </TouchableOpacity>
-        <Text style={styles.buttonText}>Upload video</Text>
-        </View>
-      </View>
+        <Text style={styles.title}>Add video profile</Text>
+        <Text style={styles.subtitle}>
+          Supported file format: MP4, Max size: 225mb, Video length: 30 sec to 2min
+        </Text>
 
-      <TouchableOpacity
-        onPress={onClose}
-        style={{
-        position: 'absolute',
-        top: 10,
-        right: 20,
-        padding: 10,
-        zIndex: 10,
-        }}
-      >
-        <Ionicons name="close" size={24} color="#000" />
-      </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <View>
+            <TouchableOpacity onPress={recordVideo} style={styles.videoIconButton}>
+              <Image
+                source={require('../../../assets/image/camera.png')}
+                style={styles.videoIcon}
+              />
+            </TouchableOpacity>
+            <Text style={styles.buttonText}>Record Now</Text>
+          </View>
+
+          <View>
+            <TouchableOpacity onPress={uploadVideo} style={styles.videoIconButton}>
+              <Image
+                source={require('../../../assets/image/uploadFile.png')}
+                style={styles.videoIcon}
+              />
+            </TouchableOpacity>
+            <Text style={styles.buttonText}>Upload video</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={onClose}
+          style={{
+            position: 'absolute',
+            top: 10,
+            right: 20,
+            padding: 10,
+            zIndex: 10,
+          }}
+        >
+          <Ionicons name="close" size={24} color="#000" />
+        </TouchableOpacity>
       </Animated.View>
     );
   };
@@ -398,92 +389,103 @@ export default function Profile() {
     ];
   
     const translateY = useRef(new Animated.Value(0)).current;
-    
-   
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        gestureState.dy > 5, // only respond to downward swipes
-      onPanResponderMove: Animated.event([null, { dy: translateY }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          Animated.timing(translateY, {
-            toValue: height,
-            duration: 300,
-            useNativeDriver: false,
-          }).start(onClose);
-        } else {
-          Animated.spring(translateY, {
-            toValue: 0,
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  
+    const panResponder = useRef(
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 5, // only respond to downward swipes
+        onPanResponderMove: Animated.event([null, { dy: translateY }], {
+          useNativeDriver: false,
+        }),
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dy > 100) {
+            Animated.timing(translateY, {
+              toValue: height,
+              duration: 300,
+              useNativeDriver: false,
+            }).start(onClose);
+          } else {
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: false,
+            }).start();
+          }
+        },
+      })
+    ).current;
   
     const handleSelect = (option) => {
       setSelectedOption(option);
     };
   
-    const handleSetNow = () => {
+    const handleSetNow = async () => {
+      console.log('Selected Option', selectedOption);
+
+      console.log('userId', userId);
+
+      const payload = {
+        user_id: +userId,
+        job_search_status: selectedOption.label,
+      };
+
+      console.log('payload', payload);
+
       if (selectedOption) {
-        onSelect?.(selectedOption);
-        onClose();
+        try {
+          console.log('Selected Option', selectedOption);
+          const response = await axios.post(API_ENDPOINTS.PERSONAL_DETAILS, payload);
+          console.log('Job Search Status Updated', response.data);
+          refetch();
+          onClose();
+        } catch (error) {
+          console.error('Error updating job search status:', error);
+          // Handle error appropriately
+        }
       }
     };
   
     return (
       <Animated.View
         style={[
-          styles.VideoPop, 
-          { 
+          styles.VideoPop,
+          {
             transform: [{ translateY }],
             height: height - 150,
             gap: 15,
-            paddingHorizontal: 30
-          }
+            paddingHorizontal: 30,
+          },
         ]}
         {...panResponder.panHandlers}
       >
         <Text style={styles.title}>Where are you in your job search journey?</Text>
+        
         {options.map((option, index) => {
-  const isSelected = selectedOption?.value === option.value;
-  return (
-    <TouchableOpacity
-      key={index}
-      style={[
-        styles.optionButton,
-        isSelected && styles.selectedOption
-      ]}
-      onPress={() => handleSelect(option)}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text 
-          style={[
-            styles.optionText,
-            isSelected && styles.selectedOptionText
-          ]}
-        >
-          {option.label}
-        </Text>
-        {isSelected && (
-        <Ionicons name='checkmark' size={20} color={Colors.primary} style={{ marginLeft: 10 }} />
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-})}
-
-        <View style={{width: '100%', alignItems: 'flex-end', justifyContent: 'center'}}>
-          <TouchableOpacity 
-            style={[
-              styles.setButton,
-              !selectedOption && styles.disabledButton
-            ]} 
+          const isSelected = selectedOption?.value === option.value;
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[styles.optionButton, isSelected && styles.selectedOption]}
+              onPress={() => handleSelect(option)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
+                  {option.label}
+                </Text>
+                {isSelected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={Colors.primary}
+                    style={{ marginLeft: 10 }}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+        
+        <View style={{ width: '100%', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <TouchableOpacity
+            style={[styles.setButton, !selectedOption && styles.disabledButton]}
             onPress={handleSetNow}
             disabled={!selectedOption}
           >
@@ -512,7 +514,7 @@ export default function Profile() {
         </View>
       )}
 
-{JobSearchStatusMenu && (
+      {JobSearchStatusMenu && (
         <View
           style={[
             styles.overlay,
@@ -528,8 +530,7 @@ export default function Profile() {
         </View>
       )}
 
-
-      <StatusBar backgroundColor="#FFFDF7" translucent={false} barStyle={'dark-content'} />
+      <StatusBar backgroundColor={Colors.bg} translucent={false} barStyle={'dark-content'} />
 
       <KeyboardAvoidingView
         style={{ flex: 1, backgroundColor: '#00000' }}
@@ -622,7 +623,7 @@ export default function Profile() {
                   {profileDetail?.introduction?.full_name || 'User'}
                 </Text>
                 <TouchableOpacity
-                  style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() => {
                     navigation.navigate('IntroMenu', {
                       data: profileDetail?.introduction,
@@ -673,14 +674,17 @@ export default function Profile() {
                 paddingHorizontal: 16, // Changed to paddingHorizontal for better text alignment
               }}
             >
-              <Text
+             { profileDetail?.PersonalDetail?.job_search_status ? <Text
+                style={[
+                  style.m16,
+                  { color: '#333', fontSize: 20, flex: 1, textAlign: 'center', fontSize: 10 },
+                ]}
+              >{profileDetail?.PersonalDetail?.job_search_status}</Text> : <Text
                 style={[
                   style.m16,
                   { color: '#333', fontSize: 16, flex: 1, textAlign: 'center', fontSize: 10 },
                 ]}
-              >
-                Set your job search status
-              </Text>
+              >Set your job search status</Text>}
               <Text
                 style={[
                   style.m16,
@@ -693,7 +697,7 @@ export default function Profile() {
                   },
                 ]}
               >
-                Set Now
+            {profileDetail?.PersonalDetail?.job_search_status ? 'Edit' : 'Set Now'}
               </Text>
             </TouchableOpacity>
 
@@ -764,7 +768,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Basic Details</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() =>
                     navigation.navigate('BasicDetail', {
                       data: profileDetail?.basicDetails,
@@ -780,6 +784,7 @@ export default function Profile() {
               </View>
 
               <View style={{ gap: 8 }}>
+
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Icon
                     name="briefcase-outline"
@@ -788,7 +793,8 @@ export default function Profile() {
                     style={{ width: 24, marginRight: 12 }}
                   />
                   <Text style={[style.r12, { color: '#333' }]}>
-                    {profileDetail?.basicDetails?.work_status || 'Not specified'}
+                    {profileDetail?.basicDetails?.ex_years|| 'Not specified'} Years{' '}
+                    {profileDetail?.basicDetails?.ex_months || 'Not specified'} Months
                   </Text>
                 </View>
 
@@ -1056,7 +1062,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Profile Summary</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() => {
                     navigation.navigate('ProfileSummary', {
                       data: profileDetail?.profileSummary,
@@ -1093,7 +1099,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Professional Details</Text>
                 <TouchableOpacity
-                  style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() =>
                     navigation.navigate('ProfessionalDetail', {
                       data: profileDetail?.professionalDetail,
@@ -1161,7 +1167,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Key Skills</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() =>
                     navigation.navigate('Skills', { data: profileDetail?.skill, id: userId })
                   }
@@ -1232,8 +1238,9 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Employment</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
-                 onPress={() => navigation.navigate('Employment', { id: userId })}>
+                  style={{ padding: 5 }}
+                  onPress={() => navigation.navigate('Employment', { id: userId })}
+                >
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1280,11 +1287,11 @@ export default function Profile() {
                   ))}
                 </View>
               ) : (
-                <View style={{ }}>
-                <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
-                  No experience added yet. Click "Add" to showcase your work experience.
-                </Text>
-              </View>
+                <View style={{}}>
+                  <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
+                    No experience added yet. Click "Add" to showcase your work experience.
+                  </Text>
+                </View>
               )}
             </View>
             {/* Project Details */}
@@ -1310,7 +1317,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Projects</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() => navigation.navigate('ProjectDetail', { id: userId })}
                 >
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
@@ -1363,7 +1370,7 @@ export default function Profile() {
                   ))}
                 </View>
               ) : (
-                <View style={{ }}>
+                <View style={{}}>
                   <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
                     No projects added yet. Click "Add" to showcase your skills
                   </Text>
@@ -1388,8 +1395,9 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Education</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
-                 onPress={() => navigation.navigate('Education' , {done: DoneQulaified})}>
+                  style={{ padding: 5 }}
+                  onPress={() => navigation.navigate('Education', { done: DoneQulaified })}
+                >
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1397,7 +1405,7 @@ export default function Profile() {
               {profileDetail?.education?.length > 0 ? (
                 profileDetail?.education.map((edu, index) => (
                   <TouchableOpacity
-                    onPress={() => navigation.navigate('Education', { edu: edu, id: userId  })}
+                    onPress={() => navigation.navigate('Education', { edu: edu, id: userId })}
                     key={edu.id}
                     style={{
                       marginBottom: 12,
@@ -1438,7 +1446,7 @@ export default function Profile() {
                   </TouchableOpacity>
                 ))
               ) : (
-                <View style={{ }}>
+                <View style={{}}>
                   <Text style={[style.r12, { color: '#666', textAlign: 'left' }]}>
                     No Education details added yet. Click "Add" to showcase your qualifications.
                   </Text>
@@ -1464,7 +1472,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Personal Details</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() =>
                     navigation.navigate('PersonalDetails', {
                       id: userId,
@@ -1530,8 +1538,9 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Languages</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
-                 onPress={() => navigation.navigate('Language', { id: userId })}>
+                  style={{ padding: 5 }}
+                  onPress={() => navigation.navigate('Language', { id: userId })}
+                >
                   <Text style={[style.m16, { color: '#14B6AA' }]}>Add</Text>
                 </TouchableOpacity>
               </View>
@@ -1576,7 +1585,7 @@ export default function Profile() {
               >
                 <Text style={[style.m18, { color: '#000' }]}>Career Preference</Text>
                 <TouchableOpacity
-                 style={{padding: 5}}
+                  style={{ padding: 5 }}
                   onPress={() =>
                     navigation.navigate('Career', {
                       id: userId,
@@ -1605,9 +1614,9 @@ export default function Profile() {
                   <View style={{ marginBottom: 12 }}>
                     <Text style={[style.r11, { color: '#888' }]}>Preferred Location</Text>
                     <Text style={[style.m12, { color: '#333' }]}>
-                    {(profileDetail?.careerPreference?.prefered_location?.length > 30
-  ? profileDetail.careerPreference.prefered_location.slice(0, 30) + '...'
-  : profileDetail?.careerPreference?.prefered_location) || 'Not specified'}
+                      {(profileDetail?.careerPreference?.prefered_location?.length > 30
+                        ? profileDetail.careerPreference.prefered_location.slice(0, 30) + '...'
+                        : profileDetail?.careerPreference?.prefered_location) || 'Not specified'}
                     </Text>
                   </View>
 
@@ -1732,7 +1741,7 @@ const styles = StyleSheet.create({
   },
 
   optionButton: {
-   width: '100%',
+    width: '100%',
     padding: 12,
     borderWidth: 1,
     borderColor: '#D5D9DF',
@@ -1765,6 +1774,6 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     borderColor: Colors.primary,
-    backgroundColor: '#EEFFFE'
-  }
+    backgroundColor: '#EEFFFE',
+  },
 });

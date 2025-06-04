@@ -64,7 +64,7 @@ export default function Email() {
   } else
     return (
       <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
-        <StatusBar backgroundColor="transparent" translucent={true} barStyle={'dark-content'} />
+        <StatusBar backgroundColor={Colors.bg} translucent={true} barStyle={'dark-content'} />
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : null}

@@ -63,11 +63,11 @@ function SaveJobList() {
       if (!userId) {
         throw new Error('User ID not found');
       }
-      
+
       const response = await axios.get(API_ENDPOINTS.SAVE_JOBS, {
-        params: { user_id: parseInt(userId, 10) }
+        params: { user_id: parseInt(userId, 10) },
       });
-      
+
       if (response.data && response.data.data) {
         setJobs(response.data.data);
       } else {
@@ -147,11 +147,7 @@ function SaveJobList() {
         </View>
       </View>
       <View style={styles.ratingContainer}>
-        <Image
-          source={ { uri: item.company_logo } }
-          style={styles.jobImage}
-          resizeMode="contain"
-        />
+        <Image source={{ uri: item.company_logo }} style={styles.jobImage} resizeMode="contain" />
       </View>
     </TouchableOpacity>
   );
@@ -168,9 +164,7 @@ function SaveJobList() {
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
       <Ionicons name="search-outline" size={50} color="#757575" />
-      <Text style={styles.emptyText}>
-        No jobs found
-      </Text>
+      <Text style={styles.emptyText}>No jobs found</Text>
     </View>
   );
 
@@ -215,9 +209,7 @@ function SaveJobList() {
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
         <View style={styles.headerText}>
-          <Text style={styles.resultsText}>
-            Saved Jobs
-          </Text>
+          <Text style={styles.resultsText}>Saved Jobs</Text>
         </View>
       </View>
       {isLoading ? (
@@ -240,6 +232,9 @@ function SaveJobList() {
         onClose={closeJobDetail}
         job={selectedJob}
         onSuccess={handleSuccessPopup}
+        IsSaved={true}
+        onRefetch={refetchJobs}
+        isSaveList={true}
       />
     </SafeAreaView>
   );
@@ -310,7 +305,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 50,
-    objectFit: 'contain'
+    objectFit: 'contain',
   },
   jobDetails: {
     flex: 1,

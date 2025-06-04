@@ -25,8 +25,8 @@ export default function IntroItem({
   const navigation = useNavigation();
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F5FBF6' }]}>
-      <StatusBar backgroundColor="#F5FBF6" translucent={true} barStyle="dark-content" />
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: Colors.bg }]}>
+      <StatusBar backgroundColor={Colors.bg} translucent={true} barStyle="dark-content" />
       <TouchableOpacity style={styles.skipButton} onPress={() => navigation.navigate('On1')}>
         <Text style={styles.skipText}>Skip</Text>
       </TouchableOpacity>
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
-    marginBottom: 100
+    marginBottom: 100,
   },
   largeCircle: {
     backgroundColor: '#F5FBF6',
@@ -114,10 +114,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 60,
     borderTopLeftRadius: 60,
     marginBottom: 10,
-    paddingHorizontal: 30
+    paddingHorizontal: 30,
   },
   title: {
-    width: 300,
+    width: 350,
     fontSize: 40,
     fontWeight: 'bold',
     color: Colors.active,

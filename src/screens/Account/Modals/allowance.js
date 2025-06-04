@@ -82,7 +82,7 @@ const AddWorkplaceHighlights = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
         <Icon name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
       <Text style={styles.title}>Add Workplace Highlights</Text>
@@ -171,7 +171,7 @@ const AddWorkplaceHighlights = () => {
 
       {/* Bottom Buttons */}
       <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.cancelButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cancelButton}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingTop: 40, // Adjust for status bar if needed
+    paddingTop: 50, // Adjust for status bar if needed
   },
   backButton: {
     marginBottom: 10,

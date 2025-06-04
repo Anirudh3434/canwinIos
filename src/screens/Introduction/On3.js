@@ -27,7 +27,7 @@ export default function On3() {
   const navigation = useNavigation();
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
-      <StatusBar backgroundColor="transparent" translucent={true} barStyle={'dark-content'} />
+      <StatusBar backgroundColor={Colors.bg} translucent={true} barStyle={'dark-content'} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : null}>
         <View style={[style.main, { backgroundColor: Colors.bg }]}>
           <Text

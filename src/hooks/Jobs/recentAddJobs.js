@@ -14,7 +14,6 @@ const useRecentJobs = () => {
 
       // Handle the data structure directly as an array without .data property
       const jobsArray = Array.isArray(jobRes.data) ? jobRes.data : jobRes.data.data || [];
-      console.log('📌 All Jobs:', typeof jobsArray, jobsArray);
 
       const today = new Date();
 

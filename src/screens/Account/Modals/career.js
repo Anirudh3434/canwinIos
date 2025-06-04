@@ -165,7 +165,7 @@ const Career = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
 
       {/* Header */}
       <View style={styles.header}>

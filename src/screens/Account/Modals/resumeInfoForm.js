@@ -204,7 +204,7 @@ const PersonalDetails = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         {renderInputField('Full Name', fullName, setFullName, 'fullName')}
@@ -291,7 +291,9 @@ const PersonalDetails = () => {
             >
               {educationList.map((edu, index) => (
                 <TouchableOpacity
-                  onPress={() => navigation.navigate('Education', { edu: edu, req: 'ResumeLocal' ,id: userId })}
+                  onPress={() =>
+                    navigation.navigate('Education', { edu: edu, req: 'ResumeLocal', id: userId })
+                  }
                   key={edu.id}
                   style={{
                     marginBottom: 12,

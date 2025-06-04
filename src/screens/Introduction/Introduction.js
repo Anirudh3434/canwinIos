@@ -18,9 +18,6 @@ import IntroItem from './IntroItem';
 import Slides from './Slides';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-
-
 const { width } = Dimensions.get('screen');
 
 export default function Introduction() {
@@ -50,8 +47,6 @@ export default function Introduction() {
     };
     checkUser();
   }, [navigation]);
-
-
 
   // Animate circle sizes and z-indices based on slide index
   useEffect(() => {
@@ -94,8 +89,6 @@ export default function Introduction() {
     ]).start(() => {
       setIsAnimating(false);
     });
-
-
   };
 
   const Footer = () => {
@@ -153,7 +146,7 @@ export default function Introduction() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: '#F5FBF6' }]}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       <FlatList
         data={Slides}
         ref={ref}
@@ -206,7 +199,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   activeIndicator: {
-    width: 30,
+    width: 20,
     height: 8,
     borderRadius: 6,
     backgroundColor: Colors.primary,

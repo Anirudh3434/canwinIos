@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,10 +17,12 @@ import { Colors } from '../../theme/color';
 import { useNavigation } from '@react-navigation/native';
 import { AppBar } from '@react-native-material/core';
 import { useDispatch } from 'react-redux';
-import { toggleSidebar } from '../../redux/slice/sideBarSlice';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DropDownPicker from 'react-native-dropdown-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import axios from 'axios';
+import { API_ENDPOINTS } from '../../api/apiConfig';
+import { useRoute } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 const isSmallScreen = width < 375;
@@ -28,6 +30,11 @@ const isSmallScreen = width < 375;
 export default function ComHome() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+
+  const route = useRoute();
+  const { profileDetail, user_id, job, seeker } = route.params;
+
+  console.log('profileDetail', profileDetail);
 
   // Dropdown states
   const [open, setOpen] = useState(false);
@@ -46,11 +53,126 @@ export default function ComHome() {
   const [items, setItems] = useState([
     { label: 'Accept', value: 'accept' },
     { label: 'Reject', value: 'reject' },
-    { label: 'Schedule to Interview', value: 'schedule' },
   ]);
 
-  console.log(typeof interviewTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  console.log(interviewDate.toLocaleDateString());
+  useEffect(() => {
+    if (selectedStatus === 'schedule') {
+      setMessage(
+        `Your interview with ${
+          profileDetail?.introduction?.full_name
+        } is scheduled for ${interviewDate.toLocaleDateString(
+          'en-GB'
+        )} at ${interviewTime.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        })}`
+      );
+    } else if (selectedStatus === 'accept') {
+      setMessage(
+        `Your application for ${profileDetail?.introduction?.full_name} has been accepted`
+      );
+    } else if (selectedStatus === 'reject') {
+      setMessage(
+        `Your application for ${profileDetail?.introduction?.full_name} has been rejected`
+      );
+    }
+  }, [selectedStatus, interviewDate, interviewTime, profileDetail]);
+
+  console.log('message', message);
+
+  const handleSubmit = async () => {
+    console.log('selectedStatus', selectedStatus);
+
+    const formattedDate = interviewDate.toLocaleDateString('en-GB');
+    const formattedTime = interviewTime.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const application_id = seeker.application_id; // assumed job is acting as application_id
+
+    const payload = {
+      user_id,
+      job_id: job,
+      application_status: selectedStatus === 'accept' ? 'Shortlisted' : selectedStatus,
+      interview_date: formattedDate,
+      interview_time: formattedTime,
+      interview_type: selectedMode,
+    };
+
+    console.log('payload', payload);
+
+    try {
+      await axios.post(API_ENDPOINTS.JOB_APPLY, payload);
+
+      const { data } = await axios.get(`${API_ENDPOINTS.FCM}?user_id=${user_id}`);
+      const fcmToken = data?.data?.fcm_token;
+
+      if (!fcmToken) {
+        console.warn('No FCM token found');
+        return;
+      }
+
+      const sendNotification = async (endpoint, msg) => {
+        await axios.post(endpoint, {
+          fcm_token: fcmToken,
+          job_id: job.job_id,
+          application_id : application_id,
+          user_id,
+          message: msg,
+        });
+      };
+
+      const getApplicationLogs = async () => {
+        const { data } = await axios.get(API_ENDPOINTS.APPLICATION_LOGS, {
+          params: { application_id },
+        });
+        return data.data;
+      };
+
+      const updateApplicationLog = async (newStatus) => {
+        const logs = await getApplicationLogs();
+        const alreadyUpdated = logs.some((item) => item.new_status === newStatus);
+        if (alreadyUpdated) return;
+
+        const old_status = logs[logs.length - 1]?.new_status || 'None';
+
+        await axios.post(API_ENDPOINTS.APPLICATION_LOGS, {
+          application_id,
+          old_status,
+          new_status: newStatus,
+        });
+      };
+
+      // Handle specific statuses
+      switch (selectedStatus) {
+        case 'schedule':
+          await sendNotification(`${API_ENDPOINTS.NODE_SERVER}/notify/interview-reminder`, message);
+          await updateApplicationLog('Interview Scheduled');
+          break;
+
+        case 'accept':
+          await sendNotification(`${API_ENDPOINTS.NODE_SERVER}/notify/application_status`, message);
+          await updateApplicationLog('Shortlisted');
+          break;
+
+        case 'reject':
+          await sendNotification(`${API_ENDPOINTS.NODE_SERVER}/notify/application_status`, message);
+          await updateApplicationLog('Rejected');
+          break;
+
+        default:
+          console.warn('Unhandled status:', selectedStatus);
+          break;
+      }
+
+      navigation.navigate('MyTabs');
+    } catch (error) {
+      console.error('Error in handleSubmit:', error?.response || error);
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.area, { backgroundColor: Colors.bg }]}>
@@ -59,14 +181,11 @@ export default function ComHome() {
         <View style={{ flex: 1 }}>
           <AppBar
             color={Colors.bg}
-            elevation={6}
+            elevation={1}
             style={{ paddingHorizontal: 10, paddingVertical: 10 }}
             leading={
               <View style={styles.header}>
-                <TouchableOpacity
-                  onPress={() => dispatch(toggleSidebar())}
-                  style={styles.iconContainer}
-                >
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconContainer}>
                   <Ionicons name="arrow-back" size={24} />
                 </TouchableOpacity>
                 <Text style={styles.nameText}>Applicants</Text>
@@ -81,11 +200,19 @@ export default function ComHome() {
                 <View style={styles.cardHeader}>
                   <Image
                     style={styles.seekerImage}
-                    source={require('../../../assets/image/a16.png')}
+                    source={
+                      profileDetail?.docs?.pp_url
+                        ? { uri: profileDetail?.docs?.pp_url }
+                        : require('../../../assets/image/profileIcon.png')
+                    }
                   />
                   <View>
-                    <Text style={styles.seekerName}>John Doe</Text>
-                    <Text style={styles.seekerDate}>Full stack developer</Text>
+                    <Text style={styles.seekerName}>
+                      {profileDetail?.introduction?.full_name || 'Applicant'}
+                    </Text>
+                    <Text style={styles.seekerDate}>
+                      {profileDetail?.professional?.job_title || 'Job Applicant'}
+                    </Text>
                   </View>
                 </View>
                 <Image
@@ -122,11 +249,15 @@ export default function ComHome() {
                       borderColor:
                         selectedStatus === 'schedule' || selectedStatus === 'accept'
                           ? Colors.primary
-                          : 'red' || (selectedStatus == '' && '#E8E8E8'),
+                          : selectedStatus === 'reject'
+                          ? 'red'
+                          : '#E8E8E8',
                       color:
                         selectedStatus === 'schedule' || selectedStatus === 'accept'
                           ? Colors.primary
-                          : 'red',
+                          : selectedStatus === 'reject'
+                          ? 'red'
+                          : 'black',
                     },
                   ]}
                   dropDownContainerStyle={styles.dropDownContainer}
@@ -242,7 +373,11 @@ export default function ComHome() {
 
         {/* Submit Button */}
         <View style={styles.submitContainer}>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+            onPress={handleSubmit}
+            style={[styles.button, { opacity: selectedStatus ? 1 : 0.5 }]}
+            disabled={!selectedStatus}
+          >
             <Text style={styles.buttonText}>Send to applicant</Text>
           </TouchableOpacity>
         </View>
@@ -425,7 +560,7 @@ const styles = StyleSheet.create({
   },
   submitContainer: {
     position: 'absolute',
-    bottom: isSmallScreen ? -20 : -30,
+    bottom: 5,
     left: 0,
     right: 0,
     width: '100%',

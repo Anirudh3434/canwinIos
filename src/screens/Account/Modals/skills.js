@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
   Alert,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -69,9 +70,7 @@ const SkillMenu = () => {
       const initialSkills = data
         .map((label) => {
           const trimmedLabel = label.trim().toLowerCase();
-          const match = skillList.find(
-            (item) => item.label.trim().toLowerCase() === trimmedLabel
-          );
+          const match = skillList.find((item) => item.label.trim().toLowerCase() === trimmedLabel);
           return match ? { label: match.label, value: match.value } : null;
         })
         .filter((skill) => skill !== null);
@@ -138,14 +137,16 @@ const SkillMenu = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
-      <View style={[styles.header, { marginTop: req === 'ResumeLocal' ? 40 : 0 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Skills</Text>
+      <StatusBar backgroundColor={Colors.bg} barStyle="dark-content" />
+      <View style={styles.header}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.title}>Skills</Text>
+        </View>
         <TouchableOpacity disabled={loading} onPress={handleSave}>
-          <Text style={styles.saveButton}>{loading ? 'Saving...' : 'Save'}</Text>
+          <Text style={styles.saveButton}> {loading ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -204,6 +205,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop: Platform.OS === 'ios' ? 0 : 10,
   },
   header: {
     padding: 20,

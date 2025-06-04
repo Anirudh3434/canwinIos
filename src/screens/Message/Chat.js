@@ -2,32 +2,164 @@ import {
   View,
   Text,
   Dimensions,
-  TouchableOpacity,
-  Modal,
   KeyboardAvoidingView,
   FlatList,
   SafeAreaView,
-  ImageBackground,
   StatusBar,
-  Image,
-  ScrollView,
-  TextInput,
+  Platform,
 } from 'react-native';
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Colors } from '../../theme/color';
 import style from '../../theme/style';
-import { useNavigation } from '@react-navigation/native';
-import { Avatar } from 'react-native-paper';
-import { AppBar, HStack } from '@react-native-material/core';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { AppBar } from '@react-native-material/core';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { API_ENDPOINTS } from '../../api/apiConfig';
+import Chats from '../../Components/Cards/chats';
+import { initPusher, disconnectPusher } from '../../service/pusher';
+import { useDispatch } from 'react-redux';
+import { setNewMessage } from '../../redux/slice/NewMessageSlice';
 
 const width = Dimensions.get('screen').width;
 const height = Dimensions.get('screen').height;
 
 export default function Chat() {
+  const dispatch = useDispatch();
+
   const navigation = useNavigation();
-  const [visible, setVisible] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const subscribedChannelsRef = useRef(new Set());
+  const isInitialMount = useRef(true);
+  const isFocused = useRef(false);
+
+  const FetchUserid = async () => {
+    try {
+      const response = await AsyncStorage.getItem('userId');
+      setUserId(+response);
+    } catch (error) {
+      console.error('Error getting userId:', error);
+    }
+  };
+
+  const FetchChat = async () => {
+    console.log('📥 Fetching chat...');
+    setLoading(true);
+    try {
+      const response = await axios.get(API_ENDPOINTS.GET_CHAT, {
+        params: { user_id: userId },
+      });
+
+      setChats(response.data.data);
+    } catch (error) {
+      console.error('❌ Error fetching chat:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const subscribeToChannels = () => {
+    if (chats.length === 0 || !isFocused.current) return;
+
+    console.log('🔔 Starting channel subscriptions...');
+
+    chats.forEach((item) => {
+      const channelName = `chat_id_${item.chat_id}`;
+
+      // Only subscribe if not already subscribed
+      if (!subscribedChannelsRef.current.has(channelName)) {
+        console.log('🔔 Subscribing to:', channelName);
+
+        initPusher(channelName, () => {
+          console.log('📨 Message received for:', channelName.split('chat_id_')[1]);
+          if (isFocused.current) {
+            FetchChat();
+          }
+        });
+
+        subscribedChannelsRef.current.add(channelName);
+        console.log('✅ Subscribed to:', channelName);
+      }
+    });
+  };
+
+  const unsubscribeFromAllChannels = () => {
+    console.log('🔕 Unsubscribing from all channels');
+
+    // Disconnect from each channel
+    subscribedChannelsRef.current.forEach((channelName) => {
+      console.log('🔌 Disconnecting from:', channelName);
+      disconnectPusher(channelName);
+    });
+
+    subscribedChannelsRef.current.clear();
+  };
+
+  // Initial setup
+  useEffect(() => {
+    FetchUserid();
+  }, []);
+
+  useEffect(() => {
+    if (userId !== null && isInitialMount.current) {
+      FetchChat();
+      isInitialMount.current = false;
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (chats.length > 0 && isFocused.current && subscribedChannelsRef.current.size === 0) {
+      subscribeToChannels();
+    }
+  }, [chats, isFocused.current]);
+
+  // Handle screen focus/blur
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('📱 Chat screen focused');
+      isFocused.current = true;
+
+      // Only fetch if we have userId
+      if (userId !== null) {
+        FetchChat();
+      }
+
+      // Subscribe to channels if chats are already loaded
+      if (chats.length > 0) {
+        subscribeToChannels();
+      }
+
+      return () => {
+        console.log('📱 Chat screen unfocused');
+        isFocused.current = false;
+        unsubscribeFromAllChannels();
+      };
+    }, [userId, chats.length])
+  );
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Chat component unmounting');
+      isFocused.current = false;
+      unsubscribeFromAllChannels();
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
+        <StatusBar translucent={false} backgroundColor={Colors.bg} barStyle={'dark-content'} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={[style.r14, { color: Colors.txt }]}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[style.area, { backgroundColor: Colors.bg }]}>
       <StatusBar translucent={false} backgroundColor={Colors.bg} barStyle={'dark-content'} />
@@ -35,7 +167,11 @@ export default function Chat() {
         <View
           style={[
             style.main,
-            { backgroundColor: Colors.bg, marginTop: Platform.OS === 'ios' ? 10 : 0 },
+            {
+              backgroundColor: Colors.bg,
+              marginTop: Platform.OS === 'ios' ? 10 : 0,
+              position: 'static',
+            },
           ]}
         >
           <AppBar
@@ -46,296 +182,22 @@ export default function Chat() {
             titleStyle={[style.subtitle, { color: Colors.active }]}
           />
 
-          <View style={{ padding: 5, marginTop: 10, marginBottom: 2 }}>
-            <View
-              style={[
-                style.inputContainer,
-                {
-                  height: 58,
-                  backgroundColor: '#F9F9F9',
-                  shadowColor: Colors.active,
-                  borderWidth: 0,
-                },
-              ]}
-            >
-              <Icon name="search" size={24} color={Colors.disable2} />
-              <TextInput
-                placeholder="Search message.."
-                placeholderTextColor={Colors.disable2}
-                selectionColor={Colors.primary}
-                style={[
-                  style.m16,
-                  { color: Colors.active, marginLeft: 5, flex: 1, marginBottom: -6 },
-                ]}
-              />
-            </View>
-          </View>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ marginTop: 20 }}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a13.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>
-                  Gustauv Semalam
-                </Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  Roger that sir, thankyou
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text
-                      style={[style.r12, { color: Colors.primary, marginTop: 3, marginRight: 2 }]}
-                    >
-                      Read
-                    </Text>
-                    <Icons name="check-bold" size={14} color={Colors.primary}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
+          <FlatList
+            data={chats}
+            keyExtractor={(item) => item.chat_id.toString()}
+            renderItem={({ item }) => <Chats item={item} newChatId={[]} />}
+            showsVerticalScrollIndicator={false}
+          />
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a14.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>
-                  Claudia Surrr
-                </Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  OK. Lorem ipsum dolor sect...
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[style.r12, { color: '#898A8D', marginTop: 3, marginRight: 2 }]}>
-                      Pending
-                    </Text>
-                    <Icons name="check-bold" size={14} color={'#898A8D'}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a15.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>Rose Melati</Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  Lorem ipsum dolor
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text
-                      style={[style.r12, { color: Colors.primary, marginTop: 3, marginRight: 2 }]}
-                    >
-                      Read
-                    </Text>
-                    <Icons name="check-bold" size={14} color={Colors.primary}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a16.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>Olivia James</Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  OK. Lorem ipsum dolor sect...
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[style.r12, { color: '#898A8D', marginTop: 3, marginRight: 2 }]}>
-                      Unread
-                    </Text>
-                    <Icons name="check-bold" size={14} color={'#898A8D'}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a17.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>Daphne Putri</Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  Lorem ipsum dolor sit amet, consect...
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[style.r12, { color: '#898A8D', marginTop: 3, marginRight: 2 }]}>
-                      Unread
-                    </Text>
-                    <Icons name="check-bold" size={14} color={'#898A8D'}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10 }}
-            >
-              <Image
-                source={require('../../../assets/image/a18.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>
-                  David Mckanzie
-                </Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  Lorem ipsum dolor sit amet, consect...
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text
-                      style={[style.r12, { color: Colors.primary, marginTop: 3, marginRight: 2 }]}
-                    >
-                      Read
-                    </Text>
-                    <Icons name="check-bold" size={14} color={Colors.primary}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Message')}
-              style={{ flexDirection: 'row', marginTop: 10, marginBottom: 20 }}
-            >
-              <Image
-                source={require('../../../assets/image/a14.png')}
-                resizeMode="stretch"
-                style={{ height: 60, width: 60 }}
-              />
-              <View style={{ flex: 1, marginLeft: 10, marginTop: 5 }}>
-                <Text style={[style.r16, { color: Colors.txt, lineHeight: 18 }]}>
-                  Gustauv Semalam
-                </Text>
-                <Text style={[style.r12, { color: Colors.active, lineHeight: 20 }]}>
-                  Roger that sir, thankyou
-                </Text>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: 5,
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <Text style={[style.r12, { color: '#898A8D' }]}>2m ago</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text
-                      style={[style.r12, { color: Colors.primary, marginTop: 3, marginRight: 2 }]}
-                    >
-                      Read
-                    </Text>
-                    <Icons name="check-bold" size={14} color={Colors.primary}></Icons>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </ScrollView>
-
-          <View style={{ position: 'absolute', right: 15, bottom: 0, alignSelf: 'center' }}>
-            <View
-              style={[
-                {
-                  backgroundColor: '#80559A',
-                  borderWidth: 0,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 60,
-                  justifyContent: 'center',
-                  height: 60,
-                  borderRadius: 50,
-                },
-              ]}
-            >
-              <Icon name="add-sharp" size={30} color={Colors.secondary} />
-            </View>
+          <View
+            style={{
+              position: 'absolute',
+              right: 20,
+              bottom: 20,
+              alignSelf: 'center',
+            }}
+          >
+         
           </View>
         </View>
       </KeyboardAvoidingView>

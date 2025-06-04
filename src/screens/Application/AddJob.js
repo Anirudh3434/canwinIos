@@ -21,7 +21,7 @@ import axios from 'axios';
 import { API_ENDPOINTS } from '../../api/apiConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { sanitizeData, formatCSV, sanitizeString } from '../../hooks/santize'; 
+import { sanitizeData, formatCSV, sanitizeString } from '../../hooks/santize';
 
 const AddJob = () => {
   const navigation = useNavigation();
@@ -289,6 +289,19 @@ const AddJob = () => {
       return;
     }
 
+    if (minSalary > maxSalary) {
+      setLoading(false);
+      Alert.alert('Minimum Salary should be less than Maximum Salary');
+      return;
+    }
+
+    if (minSalary < 0 || maxSalary < 0) {
+      setLoading(false);
+      Alert.alert('Salary should be greater than 0');
+      return;
+    }
+
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setLoading(false);
@@ -320,24 +333,24 @@ const AddJob = () => {
       const basePayload = {
         job_title: sanitizeData(jobTitle),
         job_description: sanitizeData(jobDescription),
-        job_location: formatCSV(locations),
+        job_location: locations.join(','),
         workplace_type: sanitizeData(workplaceType),
         department: sanitizeData(department),
         employment_type: sanitizeData(employmentType),
         receive_applicants_by: 'email',
         email: sanitizeString(email),
-        job_skills: formatCSV(skills),
-        job_requirments: formatCSV(requirements),
+        job_skills: skills.join(','),
+        job_requirments: requirements.join(','),
         min_experience: parseInt(minExperience),
         max_experience: parseInt(maxExperience),
         min_salary: parseInt(minSalary) || 0,
         max_salary: parseInt(maxSalary) || 0,
         employer_id: parseInt(emp_id),
-        education: formatCSV(selectedEducations),
+        education: selectedEducations.join(','),
         company_id: parseInt(comp_id),
         status: job_status,
       };
-  
+
       // Add conditional fields
       const payload = job
         ? {
@@ -409,6 +422,7 @@ const AddJob = () => {
             <Switch
               value={job_status === 'Active'}
               onValueChange={(value) => setJobStatus(value ? 'Active' : 'Inactive')}
+              trackColor={{ false: '#767577', true: Colors.primary }}
             />
             <Text
               style={{
@@ -575,7 +589,6 @@ const AddJob = () => {
                 </Text>
                 <DropDownPicker
                   listMode="SCROLLVIEW"
-
                   scrollViewProps={{ nestedScrollEnabled: true }}
                   open={employmentTypeOpen}
                   setOpen={(open) => {
@@ -587,17 +600,15 @@ const AddJob = () => {
                   items={[
                     { label: 'Full-time', value: 'full-time' },
                     { label: 'Part-time', value: 'part-time' },
-                    { label: 'Contract', value: 'contract'},
-                      {label: 'Internship', value: 'internship' },
-                    
+                    { label: 'Contract', value: 'contract' },
+                    { label: 'Internship', value: 'internship' },
                   ]}
                   placeholder="Select Employment Type"
                   placeholderStyle={{ color: '#A9A9A9' }}
-                  style={[styles.dropdownInput ,  ]}
-                  dropDownContainerStyle={[styles.dropdownContainer ]}
+                  style={[styles.dropdownInput]}
+                  dropDownContainerStyle={[styles.dropdownContainer]}
                   zIndex={3000}
                   zIndexInverse={2500}
-                
                 />
               </View>
 
@@ -663,7 +674,7 @@ const AddJob = () => {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <TextInput
-                    style={[styles.input, { width: 120 }]}
+                    style={[styles.input, { width: '45%' }]}
                     placeholder="Min Salary"
                     placeholderTextColor="#A9A9A9"
                     value={minSalary}
@@ -672,14 +683,14 @@ const AddJob = () => {
                   />
                   <Text>-</Text>
                   <TextInput
-                    style={[styles.input, { width: 120 }]}
+                    style={[styles.input, { width: '45%' }]}
                     placeholder="Max Salary"
                     placeholderTextColor="#A9A9A9"
                     value={maxSalary}
                     onChangeText={setMaxSalary}
                     keyboardType="numeric"
                   />
-                  <Text>LPA</Text>
+        
                 </View>
               </View>
 
@@ -757,23 +768,25 @@ const AddJob = () => {
 
           {activeTab === 'requirements' && (
             <View style={styles.formContainer}>
-              {requirements.filter((item)=>item != '').map((requirement, index) => (
-                <View key={index} style={styles.requirementsContainer}>
-                  <View
-                    style={{
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: '#80559A',
-                      borderRadius: 100,
-                      width: 14,
-                      height: 14,
-                    }}
-                  >
-                    <Ionicons name="checkmark" size={10} color="white" />
+              {requirements
+                .filter((item) => item != '')
+                .map((requirement, index) => (
+                  <View key={index} style={styles.requirementsContainer}>
+                    <View
+                      style={{
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#80559A',
+                        borderRadius: 100,
+                        width: 14,
+                        height: 14,
+                      }}
+                    >
+                      <Ionicons name="checkmark" size={10} color="white" />
+                    </View>
+                    <Text style={styles.requirementText}>{requirement}</Text>
                   </View>
-                  <Text style={styles.requirementText}>{requirement}</Text>
-                </View>
-              ))}
+                ))}
 
               {showAttachment && (
                 <View style={styles.attachmentContainer}>

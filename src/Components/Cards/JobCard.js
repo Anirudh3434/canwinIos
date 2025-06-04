@@ -16,14 +16,14 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home }) => {
+const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home, onClick }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
 
   // Format salary range for display
   const formatSalary = () => {
     if (job?.MIN_SALARY && job?.MAX_SALARY) {
-      return `${job.MIN_SALARY}-${job.MAX_SALARY} LPA`;
+      return `${(job.MIN_SALARY / 100000).toFixed(1)}-${(job.MAX_SALARY / 100000).toFixed(1)} LPA`;
     } else if (job?.salary_range) {
       return job.salary_range;
     } else {
@@ -50,10 +50,10 @@ const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home }) => {
   const statusStyles = getStatusStyles();
 
   return (
-    <View style={styles.cardContainer}>
+    <Pressable onPress={onClick} style={styles.cardContainer}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View style={styles.cardHeader}>
-          <Image style={styles.jobLogo} source={{uri : job?.company_logo}} />
+          <Image style={styles.jobLogo} source={{ uri: job?.company_logo }} />
           <View>
             <Text style={styles.jobTitle} numberOfLines={2} ellipsizeMode="tail">
               {job?.job_title?.length > 20
@@ -61,7 +61,13 @@ const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home }) => {
                 : job?.job_title || job?.title || 'Job Title'}
             </Text>
             <Text style={styles.jobLocation}>
-              {job.JOB_LOCATION || job.location || 'Location not specified'}
+              {job
+                ? job.location || job.JOB_LOCATION
+                  ? (job.location || job.JOB_LOCATION).length > 30
+                    ? (job.location || job.JOB_LOCATION).slice(0, 30) + '...'
+                    : job.location || job.JOB_LOCATION
+                  : 'Location not specified'
+                : 'Location not specified'}
             </Text>
             <Text style={styles.jobDate}>Posted: {job.created_at || 'Recently'}</Text>
           </View>
@@ -83,7 +89,7 @@ const JobCard = ({ job, onRepost, onDelete, onEdit, onMenu, home }) => {
           <Text style={styles.salaryText}>{formatSalary()}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -113,10 +119,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   jobLogo: {
-    width: 45,
-    height: 45,
+    width: 60,
+    height: 60,
     marginRight: 10,
-    borderRadius: 5,
+    borderRadius: 50,
   },
   jobTitle: {
     fontFamily: 'Poppins-SemiBold',

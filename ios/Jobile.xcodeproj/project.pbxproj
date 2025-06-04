@@ -281,7 +281,6 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				66C6F7AE2DBCF29D0090E687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				66E8E8B02DCA3CF3003DEA9E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
@@ -574,9 +573,7 @@
 				PRODUCT_NAME = Jobile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				"SYSTEM_HEADER_SEARCH_PATHS[arch=*]" = (
-					"$(SRCROOT)/../node_modules/react-native/React\n$(SRCROOT)/../node_modules/react-native/React/Base\n$(SRCROOT)/../node_modules/react-native\n$(SRCROOT)/../node_modules/react-native/ReactCommon",
-				);
+				"SYSTEM_HEADER_SEARCH_PATHS[arch=*]" = "$(SRCROOT)/../node_modules/react-native/React\n$(SRCROOT)/../node_modules/react-native/React/Base\n$(SRCROOT)/../node_modules/react-native\n$(SRCROOT)/../node_modules/react-native/ReactCommon";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
@@ -608,9 +605,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.reactjs.native.Canwinn;
 				PRODUCT_NAME = Jobile;
 				SWIFT_VERSION = 5.0;
-				"SYSTEM_HEADER_SEARCH_PATHS[arch=*]" = (
-					"$(SRCROOT)/../node_modules/react-native/React\n$(SRCROOT)/../node_modules/react-native/React/Base\n$(SRCROOT)/../node_modules/react-native\n$(SRCROOT)/../node_modules/react-native/ReactCommon",
-				);
+				"SYSTEM_HEADER_SEARCH_PATHS[arch=*]" = "$(SRCROOT)/../node_modules/react-native/React\n$(SRCROOT)/../node_modules/react-native/React/Base\n$(SRCROOT)/../node_modules/react-native\n$(SRCROOT)/../node_modules/react-native/ReactCommon";
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
@@ -696,7 +691,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -777,7 +775,10 @@
 					"-DFOLLY_USE_LIBCPP=1",
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;
@@ -818,14 +819,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		66C6F7AE2DBCF29D0090E687 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 11.12.0;
-			};
-		};
 		66E8E8B02DCA3CF3003DEA9E /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";

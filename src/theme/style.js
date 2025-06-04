@@ -172,7 +172,7 @@ export default StyleSheet.create({
   },
 
   icon: {
-    height: 25,
+    height: 30,
     width: 30,
     borderRadius: 24,
     alignItems: 'center',

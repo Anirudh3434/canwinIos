@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Image, Animated, Pressable } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image, Animated, Pressable, BackHandler, StatusBar } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../theme/color';
+
 
 import Home from '../screens/Home/Home';
 import ComHome from '../screens/Home/ComHome';
@@ -14,11 +16,14 @@ import Application from '../screens/Application/application';
 import Apply from '../screens/Apply/Apply';
 import Sidebar from '../Components/sideBar';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleSidebar } from '../redux/slice/sideBarSlice'; // Import sidebar toggle action
+import { toggleSidebar } from '../redux/slice/sideBarSlice';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../api/apiConfig';
 import HomeSkeleton from '../Components/Skuleton/HomeSkuleton';
 import ComHomeSkeleton from '../Components/Skuleton/ComHomeSkulton';
+import ProfileSkeleton from '../Components/Skuleton/profile_skelton';
+import { setNewMessage } from '../redux/slice/NewMessageSlice';
+import NewMessage from '../service/NewMessage';
 
 const Tab = createBottomTabNavigator();
 
@@ -28,6 +33,8 @@ export default function MyTabs() {
   const [userId, setUserId] = useState(null);
   const [roleId, setRoleId] = useState(null);
   const [error, setError] = useState(null);
+
+  const [chats, setChats] = useState([]);
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -104,6 +111,21 @@ export default function MyTabs() {
     initializeApp();
   }, []);
 
+
+useEffect(() => {
+    // Android back button
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
+
+    // iOS & Android navigation gestures
+    const unsubscribe = navigation.addListener('beforeRemove', false);
+
+    return () => {
+      backHandler.remove();
+      unsubscribe();
+    };
+  }, [navigation]);
+ 
+
   const handleTabPress = async (routeName) => {
     try {
       await AsyncStorage.setItem('lastTab', routeName);
@@ -136,6 +158,30 @@ export default function MyTabs() {
     setError(null);
     initializeApp();
   };
+
+  // Fix: use initialRoute instead of undefined lastTab variable
+  if (loading && initialRoute === 'Home') {
+    return (
+      <View style={styles.loadingContainer}>
+        <HomeSkeleton />
+      </View>
+    );
+  }
+  if (loading && initialRoute === 'ComHome') {
+    return (
+      <View style={styles.loadingContainer}>
+        <ComHomeSkeleton />
+      </View>
+    );
+  }
+
+  if (loading && initialRoute === 'Profile') {
+    return (
+      <View style={styles.loadingContainer}>
+        <ProfileSkeleton />
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -177,7 +223,8 @@ export default function MyTabs() {
   const safeRoleId = roleId !== null ? roleId : 1;
 
   return (
-    <SafeAreaView style={{ flex: 1 , backgroundColor: 'white' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.bg }}>
+      <StatusBar color='black' translucent={false} barStyle={'dark-content'} />
       {/* ✅ Sidebar with outside click detection */}
       {sideOpen && (
         <Pressable style={styles.overlayTouchable} onPress={closeSidebar}>
@@ -192,7 +239,14 @@ export default function MyTabs() {
       <Tab.Navigator
         initialRouteName={initialRoute}
         screenOptions={{
-          tabBarStyle: styles.tabBar,
+          tabBarStyle: [
+            {
+              ...styles.tabBar,
+              height: Platform.OS === 'ios' ? 50 : 60,
+              borderWidth: Platform.OS === 'ios' ? 0 : 1,
+              borderColor: Platform.OS === 'ios' ? 'transparent' : '#ADADAD',
+            },
+          ],
           tabBarShowLabel: false,
           gestureEnabled: false,
         }}
@@ -258,15 +312,17 @@ export default function MyTabs() {
           component={Chat}
           options={{
             tabBarIcon: ({ focused }) => (
-              <Image
-                source={require('../../assets/image/comment.png')}
-                resizeMode="stretch"
-                style={[styles.icon, { tintColor: focused ? '#7D53A1' : '#ADADAD' }]}
-              />
+              <View>
+                <Image
+                  source={require('../../assets/image/comment.png')}
+                  resizeMode="stretch"
+                  style={[styles.icon, { tintColor: focused ? '#7D53A1' : '#ADADAD' }]}
+                />
+              </View>
             ),
             headerShown: false,
           }}
-          listeners={{ tabPress: () => handleTabPress('Chat') }}
+          listeners={{ tabPress: () => handleTabPress('Chat') === dispatch(setNewMessage(false)) }}
         />
 
         <Tab.Screen
@@ -344,26 +400,36 @@ const styles = StyleSheet.create({
     zIndex: 15,
   },
   tabBar: {
-   height: 50,
-  borderTopLeftRadius: 30,
-  borderTopRightRadius: 30,
-  borderTopColor: '#FFFFFF',
-  backgroundColor: '#fff',
-  alignItems: 'center',
-  justifyContent: 'center',
+    height: 50,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
 
-  // iOS Top Shadow
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: -4 },
-  shadowOpacity: 0.05,
-  shadowRadius: 2,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
 
-  // Android won't reflect top shadows — use elevation visually instead if needed
-  elevation: 0, // avoid bottom shadow
+    // iOS Top Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+
+    // Android won't reflect top shadows — use elevation visually instead if needed
+    elevation: 2, // avoid bottom shadow
   },
   icon: {
     height: 24,
     width: 24,
     marginTop: 20,
+  },
+
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#7D53A1',
+    position: 'absolute',
+    top: 18,
+    right: 0,
   },
 });

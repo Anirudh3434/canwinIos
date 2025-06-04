@@ -10,7 +10,7 @@ import {
   FlatList,
   ActivityIndicator,
   BackHandler,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -25,18 +25,24 @@ import JobSuccess from '../../Components/Popups/JobSuccess';
 const SkeletonJobCard = () => (
   <View style={styles.card}>
     <SkeletonPlaceholder speed={800} highlightColor="#F2F8FC" flexDirection="column">
-      <SkeletonPlaceholder.Item width='100%' height={150} borderRadius={10} flexDirection='row' justifyContent='space-between'>
-        <SkeletonPlaceholder.Item width='70%' height={100} borderRadius={10}>
-          <SkeletonPlaceholder.Item width='80%' height={40} borderRadius={10} />
-          <SkeletonPlaceholder.Item width='25%' height={20} borderRadius={8} marginTop={5}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={10}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={5}/>
-          <SkeletonPlaceholder.Item width='60%' height={20} borderRadius={8} marginTop={5}/>
+      <SkeletonPlaceholder.Item
+        width="100%"
+        height={150}
+        borderRadius={10}
+        flexDirection="row"
+        justifyContent="space-between"
+      >
+        <SkeletonPlaceholder.Item width="70%" height={100} borderRadius={10}>
+          <SkeletonPlaceholder.Item width="80%" height={40} borderRadius={10} />
+          <SkeletonPlaceholder.Item width="25%" height={20} borderRadius={8} marginTop={5} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={10} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={5} />
+          <SkeletonPlaceholder.Item width="60%" height={20} borderRadius={8} marginTop={5} />
         </SkeletonPlaceholder.Item>
-        <SkeletonPlaceholder.Item width='25%' height={100} borderRadius={10}>
-          <SkeletonPlaceholder.Item width={70} height={70} borderRadius={50}/>
-          <SkeletonPlaceholder.Item width={70} height={20} borderRadius={8} marginTop={10}/>
-          <SkeletonPlaceholder.Item width={70} height={20} borderRadius={8} marginTop={10}/>
+        <SkeletonPlaceholder.Item width="25%" height={100} borderRadius={10}>
+          <SkeletonPlaceholder.Item width={70} height={70} borderRadius={50} />
+          <SkeletonPlaceholder.Item width={70} height={20} borderRadius={8} marginTop={10} />
+          <SkeletonPlaceholder.Item width={70} height={20} borderRadius={8} marginTop={10} />
         </SkeletonPlaceholder.Item>
       </SkeletonPlaceholder.Item>
     </SkeletonPlaceholder>
@@ -48,8 +54,8 @@ function JobList() {
   const route = useRoute();
   const { title, location } = route.params || {};
 
-  console.log(location)
-  
+  console.log(location);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [FilterScreenShow, setFilterScreenShow] = useState(false);
@@ -59,11 +65,13 @@ function JobList() {
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const fetchSearchJobs = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.get(`https://devcrm20.abacasys.com/ords/canwinn/mobile_api/filtering?search_input=${title}&job_location=${location}`);
+      const response = await axios.get(
+        `https://devcrm20.abacasys.com/ords/canwinn/mobile_api/filtering?search_input=${title}&job_location=${location}`
+      );
       if (response.data.status === 'success') {
         setJobs(response.data.data);
         setFilteredJobs(response.data.data);
@@ -75,31 +83,26 @@ function JobList() {
     }
   };
 
-  console.log(jobs)
-  
+  console.log(jobs);
+
   useEffect(() => {
     fetchSearchJobs();
   }, []);
 
-
   console.log('filtersData', filtersData);
-
-
 
   const backAction = () => {
     if (navigation.isFocused()) {
       navigation.navigate('Search');
       return true;
     }
-  }
+  };
 
-   useEffect(() => {
-      const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-  
-      return () => backHandler.remove();
-    }, [navigation]);
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
 
-
+    return () => backHandler.remove();
+  }, [navigation]);
 
   useEffect(() => {
     // Apply filters when filtersData changes
@@ -112,142 +115,147 @@ function JobList() {
   }, [filtersData]);
 
   // This function applies all selected filters to the jobs
-const applyFilters = () => {
-  console.log('run')
-  let results = [...jobs];
-  
-  // Process each filter category
-  Object.entries(filtersData).forEach(([category, selectedOptions]) => {
-    console.log('category', category, 'selectedOptions', selectedOptions);
-    if (selectedOptions && selectedOptions.length > 0) {
-      switch(category) {
-        case 'Work Mode':
-          results = results.filter(job => 
-            selectedOptions.some(option => job.workplace_type.toLowerCase() === option.toLowerCase())
-          );
-          break;
-        
-        case 'Experience':
-          results = results.filter(job => {
-            const minExp = parseInt(job.min_experience) || 0;
-            const maxExp = parseInt(job.max_experience) || 0;
-            
-            return selectedOptions.some(range => {
-              if (range === 'Fresher') {
-                return minExp === 0;
-              } else if (range === '1-2 years') {
-                return minExp >= 1 && maxExp <= 2;
-              } else if (range === '2-5 years') {
-                return minExp >= 2 && maxExp <= 5;
-              } else if (range === '5+ years') {
-                return minExp >= 5;
-              }
-              return false;
+  const applyFilters = () => {
+    console.log('run');
+    let results = [...jobs];
+
+    // Process each filter category
+    Object.entries(filtersData).forEach(([category, selectedOptions]) => {
+      console.log('category', category, 'selectedOptions', selectedOptions);
+      if (selectedOptions && selectedOptions.length > 0) {
+        switch (category) {
+          case 'Work Mode':
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (option) => job.workplace_type.toLowerCase() === option.toLowerCase()
+              )
+            );
+            break;
+
+          case 'Experience':
+            results = results.filter((job) => {
+              const minExp = parseInt(job.min_experience) || 0;
+              const maxExp = parseInt(job.max_experience) || 0;
+
+              return selectedOptions.some((range) => {
+                if (range === 'Fresher') {
+                  return minExp === 0;
+                } else if (range === '1-2 years') {
+                  return minExp >= 1 && maxExp <= 2;
+                } else if (range === '2-5 years') {
+                  return minExp >= 2 && maxExp <= 5;
+                } else if (range === '5+ years') {
+                  return minExp >= 5;
+                }
+                return false;
+              });
             });
-          });
-          break;
-        
-        case 'Salary':
-          results = results.filter(job => {
-            const minSalary = parseFloat(job.min_salary) || 0;
-            const maxSalary = parseFloat(job.max_salary) || 0;
-            
-            return selectedOptions.some(range => {
-              if (range === '0-3 LPA') {
-                return minSalary >= 0 && maxSalary <= 3;
-              } else if (range === '3-6 LPA') {
-                return minSalary >= 3 || maxSalary <= 6;
-              } else if (range === '6-10 LPA') {
-                return minSalary >= 6 || maxSalary <= 10;
-              } else if (range === '10+ LPA') {
-                return minSalary >= 10 || maxSalary >= 10;
-              }
-              return false;
+            break;
+
+          case 'Salary':
+            results = results.filter((job) => {
+              const minSalary = parseFloat(job.min_salary) || 0;
+              const maxSalary = parseFloat(job.max_salary) || 0;
+
+              return selectedOptions.some((range) => {
+                if (range === '0-3 LPA') {
+                  return minSalary >= 0 && maxSalary <= 3;
+                } else if (range === '3-6 LPA') {
+                  return minSalary >= 3 || maxSalary <= 6;
+                } else if (range === '6-10 LPA') {
+                  return minSalary >= 6 || maxSalary <= 10;
+                } else if (range === '10+ LPA') {
+                  return minSalary >= 10 || maxSalary >= 10;
+                }
+                return false;
+              });
             });
-          });
-          break;
-        
-        case 'Industries':
-          // Assuming industry might be in the 'department' field or job_category_id
-          results = results.filter(job => 
-            selectedOptions.some(industry => 
-              (job.industry && job.industry.toString() === industry)
-            )
-          );
-          break;
-        
-        case 'Work Type':
-          results = results.filter(job => 
-            selectedOptions.some(type => 
-              job.employment_type.toLowerCase() === type.toLowerCase()
-            )
-          );
-          break;
-        
-        case 'Department':
-          // Using department as potential category indicators
-          results = results.filter(job => 
-            selectedOptions.some(department => 
-              (job.department && job.department.includes(department))
-            )
-          );
-          break;
-        
-        case 'Company Size':
-          // No company size in the data, could be added later
-          break;
-        
-        case 'Role':
-          results = results.filter(job => 
-            selectedOptions.some(role => 
-              job.job_title && job.job_title.toLowerCase().includes(role.toLowerCase())
-            )
-          );
-          break;
-        
-        case 'Stipend':
-          // No stipend field, using salary fields instead
-          results = results.filter(job => {
-            const minSalary = parseFloat(job.min_salary) || 0;
-            
-            return selectedOptions.some(range => {
-              if (range === 'Unpaid') {
-                return minSalary === 0;
-              } else if (range === '0-5K per month') {
-                return minSalary > 0 && minSalary <= 0.6; // Converting to annual (0.6 LPA = 5K/month)
-              } else if (range === '5K-10K per month') {
-                return minSalary > 0.6 && minSalary <= 1.2; // (1.2 LPA = 10K/month)
-              } else if (range === '10K+ per month') {
-                return minSalary > 1.2;
-              }
-              return false;
+            break;
+
+          case 'Industries':
+            // Assuming industry might be in the 'department' field or job_category_id
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (industry) => job.industry && job.industry.toString() === industry
+              )
+            );
+            break;
+
+          case 'Work Type':
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (type) => job.employment_type.toLowerCase() === type.toLowerCase()
+              )
+            );
+            break;
+
+          case 'Department':
+            // Using department as potential category indicators
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (department) => job.department && job.department.includes(department)
+              )
+            );
+            break;
+
+          case 'Company Size':
+            // No company size in the data, could be added later
+            break;
+
+          case 'Role':
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (role) => job.job_title && job.job_title.toLowerCase().includes(role.toLowerCase())
+              )
+            );
+            break;
+
+          case 'Stipend':
+            // No stipend field, using salary fields instead
+            results = results.filter((job) => {
+              const minSalary = parseFloat(job.min_salary) || 0;
+
+              return selectedOptions.some((range) => {
+                if (range === 'Unpaid') {
+                  return minSalary === 0;
+                } else if (range === '0-5K per month') {
+                  return minSalary > 0 && minSalary <= 0.6; // Converting to annual (0.6 LPA = 5K/month)
+                } else if (range === '5K-10K per month') {
+                  return minSalary > 0.6 && minSalary <= 1.2; // (1.2 LPA = 10K/month)
+                } else if (range === '10K+ per month') {
+                  return minSalary > 1.2;
+                }
+                return false;
+              });
             });
-          });
-          break;
-        
-        case 'Education':
-          results = results.filter(job => 
-            selectedOptions.some(education => 
-              job.education.split(',').some(level => level.trim().toLowerCase() === education.toLowerCase())
-            )
-          );
-          break;
-        
-        case 'Posted By':
-          // Using company_name as a proxy for posted by
-          results = results.filter(job => 
-            selectedOptions.some(poster => 
-              job.company_type && job.company_type.toLowerCase().includes(poster.toLowerCase())
-            )
-          );
-          break;
+            break;
+
+          case 'Education':
+            results = results.filter((job) =>
+              selectedOptions.some((education) =>
+                job.education
+                  .split(',')
+                  .some((level) => level.trim().toLowerCase() === education.toLowerCase())
+              )
+            );
+            break;
+
+          case 'Posted By':
+            // Using company_name as a proxy for posted by
+            results = results.filter((job) =>
+              selectedOptions.some(
+                (poster) =>
+                  job.company_type && job.company_type.toLowerCase().includes(poster.toLowerCase())
+              )
+            );
+            break;
+        }
       }
-    }
-  });
-  
-  setFilteredJobs(results);
-  console.log(`Filtered jobs: ${results.length} out of ${jobs.length}`);
-};
+    });
+
+    setFilteredJobs(results);
+    console.log(`Filtered jobs: ${results.length} out of ${jobs.length}`);
+  };
 
   const handleSuccess = () => {
     setSuccessPop(true);
@@ -276,10 +284,7 @@ const applyFilters = () => {
   const renderJobCard = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.jobDetails}>
-        <TouchableOpacity
-          onPress={() => openJobDetail(item)}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity onPress={() => openJobDetail(item)} activeOpacity={0.7}>
           <Text style={styles.cardTitle}>{item.job_title}</Text>
           <Text style={styles.cardText}>{item.company_name}</Text>
           <View style={styles.detailRow}>
@@ -288,27 +293,29 @@ const applyFilters = () => {
           </View>
           <View style={styles.detailRow}>
             <Ionicons name="briefcase-outline" size={16} color="gray" />
-            <Text style={styles.detailText}>{item.min_experience}-{item.max_experience} years </Text>
+            <Text style={styles.detailText}>
+              {item.min_experience}-{item.max_experience} years{' '}
+            </Text>
           </View>
         </TouchableOpacity>
         <View style={[styles.detailRow, { marginTop: 10 }]}>
-          <ScrollView style={styles.skillContainer} horizontal={true} showsHorizontalScrollIndicator={false}>
-            {item.job_skills && item.job_skills.split(',').map((skill, index) => (
-              <View key={index} style={styles.skillChip}>
-                <Ionicons name="checkmark" size={10} color="gray" />
-                <Text style={styles.skillText}>{skill}</Text>
-              </View>
-            ))}
+          <ScrollView
+            style={styles.skillContainer}
+            horizontal={true}
+            showsHorizontalScrollIndicator={false}
+          >
+            {item.job_skills &&
+              item.job_skills.split(',').map((skill, index) => (
+                <View key={index} style={styles.skillChip}>
+                  <Ionicons name="checkmark" size={10} color="gray" />
+                  <Text style={styles.skillText}>{skill}</Text>
+                </View>
+              ))}
           </ScrollView>
         </View>
-      
       </View>
       <View style={styles.ratingContainer}>
-      <Image
-  source={{ uri: item.company_logo }}
-  style={styles.jobImage}
-  resizeMode="contain"
-/>
+        <Image source={{ uri: item.company_logo }} style={styles.jobImage} resizeMode="contain" />
         <View style={styles.ratingInfo}>
           <View style={styles.ratingRow}>
             <Ionicons name="star" size={18} color="#FFC107" />
@@ -320,26 +327,26 @@ const applyFilters = () => {
     </View>
   );
 
-const renderFilterBadge = (label, tabIndex) => {
-  // Check if this filter category exists in the filtersData
-  const isActive = Object.keys(filtersData).includes(label);
-  
-  return (
-    <TouchableOpacity
-      onPress={() => openFilterWithTab(tabIndex)}
-      style={[styles.badgeOptions ,  {backgroundColor: isActive ? '#DFFAF6' : 'transparent'} ]}
-    >
-      <Text 
-        style={[
-          styles.filterText, 
-         // Use transparent instead of black
-        ]}
+  const renderFilterBadge = (label, tabIndex) => {
+    // Check if this filter category exists in the filtersData
+    const isActive = Object.keys(filtersData).includes(label);
+
+    return (
+      <TouchableOpacity
+        onPress={() => openFilterWithTab(tabIndex)}
+        style={[styles.badgeOptions, { backgroundColor: isActive ? '#DFFAF6' : 'transparent' }]}
       >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-};
+        <Text
+          style={[
+            styles.filterText,
+            // Use transparent instead of black
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const filterOptions = [
     { label: 'Work Mode', index: 0 },
@@ -349,10 +356,9 @@ const renderFilterBadge = (label, tabIndex) => {
     { label: 'Work Type', index: 4 },
     { label: 'Department', index: 5 },
     { label: 'Company Size', index: 6 },
-    { label: 'Role', index: 7 },
-    { label: 'Stipend', index: 8 },
-    { label: 'Education', index: 9 },
-    { label: 'Posted By', index: 10 },
+    { label: 'Stipend', index: 7 },
+    { label: 'Education', index: 8 },
+    { label: 'Posted By', index: 9 },
   ];
 
   const renderEmptyList = () => (
@@ -365,7 +371,7 @@ const renderFilterBadge = (label, tabIndex) => {
   if (FilterScreenShow) {
     return (
       <FilterScreen
-        data = {filtersData}
+        data={filtersData}
         SearchFilterData={handleFilterData}
         filterVisible={setFilterScreenShow}
         index={index}
@@ -379,10 +385,8 @@ const renderFilterBadge = (label, tabIndex) => {
         barStyle={modalVisible ? 'light-content' : 'dark-content'}
         backgroundColor={modalVisible ? 'rgba(0, 0, 0, 0.5)' : 'white'}
       />
-      {successPop && (
-        <JobSuccess setSuccessPop={setSuccessPop}/>
-      )}
-      
+      {successPop && <JobSuccess setSuccessPop={setSuccessPop} />}
+
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.navigate('Search')}
@@ -393,8 +397,11 @@ const renderFilterBadge = (label, tabIndex) => {
         <View style={styles.headerText}>
           <Text style={styles.resultsText}>Results</Text>
           <Text style={styles.jobsFoundText}>
-            {isLoading ? 'Searching jobs...' : 
-             `${filteredJobs.length} Jobs Found${Object.keys(filtersData).length > 0 ? ' (Filtered)' : ''}`}
+            {isLoading
+              ? 'Searching jobs...'
+              : `${filteredJobs.length} Jobs Found${
+                  Object.keys(filtersData).length > 0 ? ' (Filtered)' : ''
+                }`}
           </Text>
         </View>
       </View>
@@ -425,7 +432,7 @@ const renderFilterBadge = (label, tabIndex) => {
             source={require('../../../assets/image/filterIcon.png')}
           />
         </TouchableOpacity>
-        
+
         <FlatList
           horizontal
           data={filterOptions}
@@ -435,7 +442,7 @@ const renderFilterBadge = (label, tabIndex) => {
           style={styles.scrollBadgeFilter}
         />
       </View>
-      
+
       <JobDetailModal
         visible={modalVisible}
         onClose={closeJobDetail}
@@ -531,8 +538,9 @@ export const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
   },
   jobImage: {
-    width: 35,
-    height: 35,
+    width: 60,
+    height: 60,
+    borderRadius: 50,
   },
   jobDetails: {
     flex: 1,
@@ -619,7 +627,6 @@ export const styles = StyleSheet.create({
     paddingVertical: 5,
     backgroundColor: 'white',
     zIndex: 9999,
-
   },
   filterIconContainer: {
     width: 30,

@@ -49,6 +49,16 @@ const CompanyDetails = () => {
   const [userId, setUserId] = useState(null);
   const [error, setError] = useState(null);
 
+  const sanitize = (input) => {
+    if (typeof input !== 'string') return input;
+
+    return input
+      .replace(/['"`\\]/g, '') // Remove quotes and backslashes
+      .replace(/[<>]/g, '') // Remove angle brackets
+      .replace(/[;]/g, '') // Remove semicolons
+      .trim(); // Remove leading/trailing spaces
+  };
+
   useEffect(() => {
     const getUserId = async () => {
       try {
@@ -108,7 +118,7 @@ const CompanyDetails = () => {
       .then(async (image) => {
         // Set the image URI for display immediately
         setLogoUri(image.path);
-        
+
         const base64Data = await RNFS.readFile(image.path, 'base64');
         const blob = {
           name: image.filename || 'company.jpg',
@@ -140,7 +150,7 @@ const CompanyDetails = () => {
     try {
       const response = await axios.post(API_ENDPOINTS.DOCS, payload);
       console.log('Upload response:', response.data);
-      
+
       // Store the server response as the company logo reference
       if (response?.data?.company_logo) {
         setCompanyLogo(response.data.company_logo);
@@ -228,16 +238,16 @@ const CompanyDetails = () => {
     }
 
     const data = {
-      company_logo: companyLogo, // This should now be the ID or URL from the server
-      company_type: accountType,
-      company_name: companyName,
-      industry: industryValue,
+      company_logo: companyLogo,
+      company_type: sanitize(accountType),
+      company_name: sanitize(companyName),
+      industry: sanitize(industryValue),
       no_of_employees: parseInt(noOfEmployees) || 0,
       country: countryId,
       state: stateId,
-      city: city,
-      pincode: pincode,
-      company_address: companyAddress,
+      city: sanitize(city),
+      pincode: sanitize(pincode),
+      company_address: sanitize(companyAddress),
     };
 
     dispatch(setCompanyDetails(data));
@@ -250,14 +260,20 @@ const CompanyDetails = () => {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={{ paddingVertical: 10, paddingHorizontal: 16, marginTop: 50 }}>
-          
-        </View>
+        <View style={{ paddingVertical: 10, paddingHorizontal: 16, marginTop: 50 }}></View>
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ fontSize: 30, fontFamily: 'Poppins-SemiBold', marginBottom: 4, textAlign: 'center', width: '100%' }}>
+          <Text
+            style={{
+              fontSize: 30,
+              fontFamily: 'Poppins-SemiBold',
+              marginBottom: 4,
+              textAlign: 'center',
+              width: '100%',
+            }}
+          >
             Company details
           </Text>
 
@@ -265,8 +281,8 @@ const CompanyDetails = () => {
             You're creating account as a:
           </Text>
           <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-            <TouchableOpacity 
-              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }} 
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', marginRight: 20 }}
               onPress={() => setAccountType('company')}
             >
               <RadioButton
@@ -292,24 +308,32 @@ const CompanyDetails = () => {
           </View>
 
           {!logoUri ? (
-            <TouchableOpacity 
-              style={{ 
-                height: 150, 
-                alignItems: 'center', 
+            <TouchableOpacity
+              style={{
+                height: 150,
+                alignItems: 'center',
                 justifyContent: 'center',
                 borderWidth: 1,
                 borderColor: '#DBDBDB',
                 borderRadius: 10,
                 paddingVertical: 20,
                 marginBottom: 20,
-              }} 
+              }}
               onPress={pickImage}
               disabled={loading}
             >
               <View style={{ backgroundColor: '#F7F7F7', borderRadius: 50, padding: 10 }}>
                 <Ionicons name="cloud-upload-outline" size={30} color="#ADADAD" />
               </View>
-              <Text style={{ fontFamily: 'Poppins-Regular', marginLeft: 10, fontSize: 14, color: 'gray', marginTop: 10 }}>
+              <Text
+                style={{
+                  fontFamily: 'Poppins-Regular',
+                  marginLeft: 10,
+                  fontSize: 14,
+                  color: 'gray',
+                  marginTop: 10,
+                }}
+              >
                 {loading ? 'Uploading...' : 'Upload Company logo'}
               </Text>
             </TouchableOpacity>
@@ -342,17 +366,21 @@ const CompanyDetails = () => {
                 setCompanyName(text);
                 setErrors({ ...errors, companyName: false });
               }}
-              style={{ 
-                borderWidth: 1, 
-                borderColor: errors.companyName ? 'red' : '#E0E0E0', 
-                borderRadius: 8, 
-                paddingHorizontal: 12, 
-                paddingVertical: 17, 
-                marginBottom: 16 
+              style={{
+                borderWidth: 1,
+                borderColor: errors.companyName ? 'red' : '#E0E0E0',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 17,
+                marginBottom: 16,
               }}
               placeholder="Enter Company Name"
             />
-            {errors.companyName && <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>Company name is required</Text>}
+            {errors.companyName && (
+              <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>
+                Company name is required
+              </Text>
+            )}
           </View>
 
           <View style={{ width: '100%', marginTop: 20, zIndex: 5000 }}>
@@ -370,7 +398,7 @@ const CompanyDetails = () => {
               }}
               setItems={setIndustryItems}
               placeholder="Select Industry"
-              style={{ 
+              style={{
                 borderColor: errors.industry ? 'red' : '#E0E0E0',
                 borderRadius: 8,
               }}
@@ -389,13 +417,13 @@ const CompanyDetails = () => {
             <TextInput
               value={noOfEmployees}
               onChangeText={setNoOfEmployees}
-              style={{ 
-                borderWidth: 1, 
-                borderColor: '#E0E0E0', 
-                borderRadius: 8, 
-                paddingHorizontal: 12, 
-                paddingVertical: 17, 
-                marginBottom: 16 
+              style={{
+                borderWidth: 1,
+                borderColor: '#E0E0E0',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 17,
+                marginBottom: 16,
               }}
               placeholder="Enter Number of Employees"
               keyboardType="number-pad"
@@ -407,13 +435,13 @@ const CompanyDetails = () => {
             <TextInput
               value={designation}
               onChangeText={setDesignation}
-              style={{ 
-                borderWidth: 1, 
-                borderColor: '#E0E0E0', 
-                borderRadius: 8, 
-                paddingHorizontal: 12, 
-                paddingVertical: 17, 
-                marginBottom: 16 
+              style={{
+                borderWidth: 1,
+                borderColor: '#E0E0E0',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 17,
+                marginBottom: 16,
               }}
               placeholder="Enter Designation"
             />
@@ -435,7 +463,7 @@ const CompanyDetails = () => {
               }}
               setItems={setCountryItems}
               placeholder="Select Country"
-              style={{ 
+              style={{
                 borderColor: errors.countryId ? 'red' : '#E0E0E0',
                 borderRadius: 8,
               }}
@@ -470,7 +498,7 @@ const CompanyDetails = () => {
               }}
               setItems={setStateItems}
               placeholder="Select State"
-              style={{ 
+              style={{
                 borderColor: errors.stateId ? 'red' : '#E0E0E0',
                 borderRadius: 8,
               }}
@@ -491,13 +519,13 @@ const CompanyDetails = () => {
           <View style={{ width: '100%', marginTop: 20 }}>
             <Text style={{ fontSize: 16, marginBottom: 8 }}>City</Text>
             <TextInput
-              style={{ 
-                borderWidth: 1, 
-                borderColor: errors.city ? 'red' : '#E0E0E0', 
-                borderRadius: 8, 
-                paddingHorizontal: 12, 
-                paddingVertical: 17, 
-                marginBottom: 16 
+              style={{
+                borderWidth: 1,
+                borderColor: errors.city ? 'red' : '#E0E0E0',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 17,
+                marginBottom: 16,
               }}
               placeholder="Enter City"
               value={city}
@@ -506,7 +534,11 @@ const CompanyDetails = () => {
                 setErrors({ ...errors, city: false });
               }}
             />
-            {errors.city && <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>City is required</Text>}
+            {errors.city && (
+              <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>
+                City is required
+              </Text>
+            )}
           </View>
 
           <View style={{ width: '100%', marginTop: 20 }}>
@@ -517,18 +549,22 @@ const CompanyDetails = () => {
                 setPincode(text);
                 setErrors({ ...errors, pincode: false });
               }}
-              style={{ 
-                borderWidth: 1, 
-                borderColor: errors.pincode ? 'red' : '#E0E0E0', 
-                borderRadius: 8, 
-                paddingHorizontal: 12, 
-                paddingVertical: 17, 
-                marginBottom: 16 
+              style={{
+                borderWidth: 1,
+                borderColor: errors.pincode ? 'red' : '#E0E0E0',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 17,
+                marginBottom: 16,
               }}
               placeholder="Enter Pin Code"
               keyboardType="number-pad"
             />
-            {errors.pincode && <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>Pin Code is required</Text>}
+            {errors.pincode && (
+              <Text style={{ color: 'red', fontSize: 12, marginTop: -10, marginBottom: 8 }}>
+                Pin Code is required
+              </Text>
+            )}
           </View>
 
           <View style={{ width: '100%', marginTop: 20 }}>
@@ -539,13 +575,13 @@ const CompanyDetails = () => {
                 setCompanyAddress(text);
                 setErrors({ ...errors, companyAddress: false });
               }}
-              style={{ 
-                borderWidth: 1, 
-                borderColor: errors.companyAddress ? 'red' : '#ccc', 
-                borderRadius: 8, 
-                padding: 10, 
-                height: 150, 
-                textAlignVertical: 'top' 
+              style={{
+                borderWidth: 1,
+                borderColor: errors.companyAddress ? 'red' : '#ccc',
+                borderRadius: 8,
+                padding: 10,
+                height: 150,
+                textAlignVertical: 'top',
               }}
               placeholder="Enter Company Address"
               multiline={true}
@@ -553,12 +589,14 @@ const CompanyDetails = () => {
               textAlignVertical="top"
             />
             {errors.companyAddress && (
-              <Text style={{ color: 'red', fontSize: 12, marginTop: 5 }}>Company Address is required</Text>
+              <Text style={{ color: 'red', fontSize: 12, marginTop: 5 }}>
+                Company Address is required
+              </Text>
             )}
           </View>
 
-          <TouchableOpacity 
-            onPress={handleContinue} 
+          <TouchableOpacity
+            onPress={handleContinue}
             style={{
               width: '100%',
               backgroundColor: Colors.primary,
@@ -576,7 +614,6 @@ const CompanyDetails = () => {
     </SafeAreaView>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

@@ -111,7 +111,7 @@ const JobSelection = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar backgroundColor={Colors.bg} barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.scrollView}>
         <Text style={styles.title}>What type of Job You're Looking For?</Text>
         <View style={styles.jobList}>

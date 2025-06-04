@@ -34,11 +34,7 @@ export default function Phone() {
   const phoneInput = useRef(null);
 
   useEffect(() => {
-    Alert.alert(
-      'Note',
-      'Please select the country code before proceeding.',
-      [{ text: 'OK' }]
-    );
+    Alert.alert('Note', 'Please select the country code before proceeding.', [{ text: 'OK' }]);
   }, []);
 
   const sendOtp = async () => {
@@ -96,7 +92,8 @@ export default function Phone() {
             <PhoneInput
               ref={phoneInput}
               defaultValue={phoneNumber}
-              layout="first"
+              layout="second"
+              defaultCode="US"
               onChangeFormattedText={(text) => setPhoneNumber(text)}
               codeTextStyle={{ color: Colors.txt }}
               textInputProps={{ placeholderTextColor: '#9E9E9E' }}

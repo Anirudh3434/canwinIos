@@ -13,24 +13,23 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import axios from 'axios';
-import { API_ENDPOINTS } from '../../../api/apiConfig'; // Corrected import path
+import { API_ENDPOINTS } from '../../../api/apiConfig';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 const CompanyDetails = () => {
   const route = useRoute();
-  const { data } = route.params || {};
   const navigation = useNavigation();
 
+  // Safely extract company data with proper fallback
+  const { data } = route.params || {};
   const company = data?.data || {};
 
-
-  console.log('Company Details:', company);
-
-  const [email, setEmail] = useState(company?.company_email || '');
-  const [website, setWebsite] = useState(company?.company_website || '');
-  const [founded, setFounded] = useState(company?.founded_year?.toString() || ''); // Ensure string
-  const [employee, setEmployee] = useState(company?.no_of_employees?.toString() || ''); // Ensure string
-  const [industry, setIndustry] = useState(company?.industry || '');
+  // State initialization with proper type conversion and null checks
+  const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [founded, setFounded] = useState('');
+  const [employee, setEmployee] = useState('');
+  const [industry, setIndustry] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [open, setOpen] = useState(false);
@@ -45,16 +44,43 @@ const CompanyDetails = () => {
     { label: 'IT Services', value: 'IT Services' },
   ]);
 
+  // Safely set initial values from company data
   useEffect(() => {
-    // Set initial values, important for edits
-    setEmail(company?.company_email || '');
-    setWebsite(company?.company_website || '');
-    setFounded(company?.founded_year?.toString() || '');
-    setEmployee(company?.no_of_employees?.toString() || '');
-    setIndustry(company?.industry || '');
+    if (company) {
+      setEmail(company.company_email || '');
+      setWebsite(company.company_website || '');
+      setFounded(company.founded_year ? company.founded_year.toString() : '');
+      setEmployee(company.no_of_employees ? company.no_of_employees.toString() : '');
+      setIndustry(company.industry || '');
+    }
   }, [company]);
 
-  
+  const validateInputs = () => {
+    const newErrors = {};
+
+    // Email validation
+    if (email && !validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Founded year validation
+    if (
+      founded &&
+      (isNaN(founded) ||
+        parseInt(founded, 10) < 1800 ||
+        parseInt(founded, 10) > new Date().getFullYear())
+    ) {
+      newErrors.founded = 'Please enter a valid founding year';
+    }
+
+    // Employee count validation
+    if (employee && (isNaN(employee) || parseInt(employee, 10) < 0)) {
+      newErrors.employee = 'Please enter a valid employee count';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,28 +88,32 @@ const CompanyDetails = () => {
   };
 
   const handleSave = async () => {
-    const payload = {
-      company_id: parseInt(company?.company_id ?? 0, 10),
-      company_type: company?.company_type ?? '',
-      company_logo: company?.company_logo ?? '',
-      company_name: company?.company_name ?? '',
-      industry: industry ?? '',
-      city: company?.city ?? '',
-      company_address: company?.company_address ?? '',
-      company_email: email ?? '',
-      company_website: website ?? '',
-      about: company?.about ?? '',
-      hr_email: company?.hr_email ?? '',
-      company_gstin: company?.company_gstin ?? '',
-      verified_status: company?.verified_status ?? 'N',
-      no_of_employees: parseInt(employee ?? 0, 10),
-      country: parseInt(company?.country ?? 0, 10),
-      state: parseInt(company?.state ?? 0, 10),
-      pincode: parseInt(company?.pincode ?? 0, 10),
-      founded_year: parseInt(founded ?? 0, 10),
-    };
+    // Validate inputs before submission
+    if (!validateInputs()) {
+      return;
+    }
 
-    console.log('Payload:', payload);
+    // Safely prepare the payload with proper type conversions
+    const payload = {
+      company_id: company?.company_id ? parseInt(company.company_id, 10) : 0,
+      company_type: company?.company_type || '',
+      company_logo: company?.company_logo || '',
+      company_name: company?.company_name || '',
+      industry: industry || '',
+      city: company?.city || '',
+      company_address: company?.company_address || '',
+      company_email: email || '',
+      company_website: website || '',
+      about: company?.about || '',
+      hr_email: company?.hr_email || '',
+      company_gstin: company?.company_gstin || '',
+      verified_status: company?.verified_status || 'N',
+      no_of_employees: employee ? parseInt(employee, 10) : 0,
+      country: company?.country ? parseInt(company.country, 10) : 0,
+      state: company?.state ? parseInt(company.state, 10) : 0,
+      pincode: company?.pincode ? parseInt(company.pincode, 10) : 0,
+      founded_year: founded ? parseInt(founded, 10) : 0,
+    };
 
     try {
       setLoading(true);
@@ -94,11 +124,11 @@ const CompanyDetails = () => {
         setLoading(false);
         navigation.navigate('MyTabs');
       } else {
-        Alert.alert('Error', res.message || 'Update failed');
+        Alert.alert('Error', res?.message || 'Update failed');
         setLoading(false);
       }
     } catch (error) {
-      console.error(error);
+      console.error('API Error:', error);
       Alert.alert('Error', 'Something went wrong while saving');
       setLoading(false);
     }
@@ -106,7 +136,7 @@ const CompanyDetails = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+      <StatusBar barStyle="dark-content" backgroundColor={Colors.bg} />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -119,7 +149,7 @@ const CompanyDetails = () => {
           onPress={handleSave}
           style={styles.saveButtonContainer}
         >
-          <Text style={styles.saveButtonText}> {loading ? 'Saving...' : 'Save'}</Text>
+          <Text style={styles.saveButtonText}>{loading ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -149,7 +179,6 @@ const CompanyDetails = () => {
             placeholder="Website"
             value={website}
             onChangeText={setWebsite}
-            keyboardType=""
             placeholderTextColor="#C8C8C8"
             autoCapitalize="none"
           />
@@ -182,25 +211,64 @@ const CompanyDetails = () => {
           {errors.employee && <Text style={styles.errorText}>{errors.employee}</Text>}
         </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Industry</Text>
-          <DropDownPicker
-            listMode="SCROLLVIEW"
-            scrollViewProps={{ nestedScrollEnabled: true }}
-            open={open}
-            value={industry}
-            items={industryList}
-            setOpen={setOpen}
-            setValue={setIndustry}
-            placeholder="Select Industry"
-            style={[styles.dropdown, errors.industry ? styles.dropdownError : null]}
-            dropDownContainerStyle={styles.dropdownContainer}
-            zIndex={5000}
-            zIndexInverse={1000}
-            onChangeValue={setIndustry}
-          />
-          {errors.industry && <Text style={styles.errorText}>{errors.industry}</Text>}
-        </View>
+        {/* Use conditional rendering to solve zIndex clash */}
+        {!open && (
+          <View style={[styles.inputContainer, { zIndex: 1 }]}>
+            <Text style={styles.label}>Industry</Text>
+            <DropDownPicker
+              listMode="SCROLLVIEW"
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+                keyboardShouldPersistTaps: 'handled',
+              }}
+              open={open}
+              value={industry}
+              items={industryList}
+              setOpen={setOpen}
+              setValue={setIndustry}
+              placeholder="Select Industry"
+              style={[styles.dropdown, errors.industry ? styles.dropdownError : null]}
+              dropDownContainerStyle={styles.dropdownContainer}
+              zIndex={1000}
+              zIndexInverse={3000}
+              onChangeValue={(value) => {
+                setIndustry(value);
+                // Close dropdown after selection to avoid layout issues
+                setTimeout(() => setOpen(false), 100);
+              }}
+            />
+            {errors.industry && <Text style={styles.errorText}>{errors.industry}</Text>}
+          </View>
+        )}
+
+        {open && (
+          <View style={[styles.inputContainer, { zIndex: 1000 }]}>
+            <Text style={styles.label}>Industry</Text>
+            <DropDownPicker
+              listMode="SCROLLVIEW"
+              scrollViewProps={{
+                nestedScrollEnabled: true,
+                keyboardShouldPersistTaps: 'handled',
+              }}
+              open={open}
+              value={industry}
+              items={industryList}
+              setOpen={setOpen}
+              setValue={setIndustry}
+              placeholder="Select Industry"
+              style={[styles.dropdown, errors.industry ? styles.dropdownError : null]}
+              dropDownContainerStyle={styles.dropdownContainer}
+              zIndex={1000}
+              zIndexInverse={3000}
+              onChangeValue={(value) => {
+                setIndustry(value);
+                // Close dropdown after selection to avoid layout issues
+                setTimeout(() => setOpen(false), 100);
+              }}
+            />
+            {errors.industry && <Text style={styles.errorText}>{errors.industry}</Text>}
+          </View>
+        )}
 
         <View style={styles.bottomPadding} />
       </ScrollView>
